@@ -4,22 +4,22 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
   :root{
-    color-scheme: dark;
-    --bg:#10121a;
-    --surface-1:#181b26;
-    --surface-2:#20242f;
-    --surface-3:#2a3040;
-    --border:#2c3140;
-    --text-primary:#f5f6f8;
-    --text-secondary:#9aa0b4;
-    --text-muted:#6b7185;
-    --team-a:#3987e5;
-    --team-a-soft:#1c2c47;
-    --team-b:#d95926;
-    --team-b-soft:#3a2416;
-    --good:#2fd46e;
-    --warn:#fab219;
-    --bad:#e6564f;
+    color-scheme: light;
+    --bg:#f2f4f7;
+    --surface-1:#ffffff;
+    --surface-2:#eef1f5;
+    --surface-3:#e1e5ec;
+    --border:#d6dbe3;
+    --text-primary:#161821;
+    --text-secondary:#565c6b;
+    --text-muted:#8a8f9c;
+    --team-a:#2a78d6;
+    --team-a-soft:#e5eefb;
+    --team-b:#d9601f;
+    --team-b-soft:#fbe9dd;
+    --good:#1f8a3b;
+    --warn:#c97a00;
+    --bad:#d1453f;
     --radius-lg:20px;
     --radius-md:14px;
     --radius-sm:9px;
@@ -59,7 +59,7 @@
   .btn-primary{
     background:linear-gradient(120deg,var(--team-a),var(--team-b));
     color:#fff;border:none;font-size:1.02rem;padding:14px 30px;
-    box-shadow:0 8px 24px -10px rgba(57,135,229,.5);
+    box-shadow:0 8px 24px -10px rgba(42,120,214,.35);
   }
   .btn-ghost{background:transparent;color:var(--text-secondary);}
   .btn-ghost:hover{color:var(--text-primary);border-color:var(--text-secondary);}
@@ -173,8 +173,8 @@
   }
   .opt-btn:hover:not(:disabled){border-color:var(--tc);transform:translateY(-1px);}
   .opt-btn:disabled{cursor:default;}
-  .opt-btn.correct{border-color:var(--good);background:rgba(47,212,110,.15);}
-  .opt-btn.wrong{border-color:var(--bad);background:rgba(230,86,79,.15);}
+  .opt-btn.correct{border-color:var(--good);background:rgba(31,138,59,.13);}
+  .opt-btn.wrong{border-color:var(--bad);background:rgba(209,69,63,.13);}
   .opt-btn.dim{opacity:.55;}
   .opt-letter{
     display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;
@@ -183,6 +183,50 @@
   .done-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;color:var(--text-secondary);}
   .done-emoji{font-size:2.6rem;}
   .done-text{color:var(--text-primary);font-weight:800;font-size:1.15rem;}
+
+  /* ---------- fullscreen game mode: two panels fill the whole screen, half each ---------- */
+  body.game-fullscreen{overflow:hidden;}
+  body.game-fullscreen .topbar{
+    height:52px;padding:0 16px;box-sizing:border-box;
+  }
+  body.game-fullscreen .setup-sub{display:none;}
+  body.game-fullscreen main{
+    max-width:none;margin:0;padding:0;
+    height:100vh;height:100dvh;
+    padding-top:52px;box-sizing:border-box;
+  }
+  body.game-fullscreen .arena{
+    height:100%;gap:0;
+  }
+  body.game-fullscreen .panel{
+    border-radius:0;border-top-width:6px;
+    justify-content:center;gap:clamp(14px,2.5vh,28px);
+    padding:clamp(20px,4vh,56px) clamp(20px,4vw,64px);
+    min-height:0;height:100%;
+  }
+  body.game-fullscreen .panel-a{border-right:1px solid var(--border);}
+  body.game-fullscreen .team-name{font-size:clamp(1.1rem,2.2vw,1.6rem);}
+  body.game-fullscreen .team-score{font-size:clamp(1.6rem,4vw,2.8rem);}
+  body.game-fullscreen .score-unit{font-size:.85rem;}
+  body.game-fullscreen .progress-row{font-size:clamp(.85rem,1.4vw,1.05rem);}
+  body.game-fullscreen .timer-readout{font-size:clamp(.9rem,1.5vw,1.2rem);}
+  body.game-fullscreen .timerbar{height:12px;}
+  body.game-fullscreen .question-card{
+    font-size:clamp(1.2rem,2.8vw,2rem);padding:clamp(20px,3vh,36px);
+    min-height:0;line-height:1.5;
+  }
+  body.game-fullscreen .opt-grid{gap:clamp(10px,1.6vw,18px);}
+  body.game-fullscreen .opt-btn{
+    font-size:clamp(1rem,1.9vw,1.35rem);padding:clamp(16px,2.6vh,28px);gap:14px;
+  }
+  body.game-fullscreen .opt-letter{
+    width:clamp(26px,3vw,36px);height:clamp(26px,3vw,36px);font-size:clamp(.85rem,1.4vw,1.05rem);
+  }
+  body.game-fullscreen .done-emoji{font-size:clamp(2.6rem,6vw,4rem);}
+  body.game-fullscreen .done-text{font-size:clamp(1.15rem,2.4vw,1.6rem);}
+  @media(max-width:760px){
+    body.game-fullscreen .panel-a{border-right:none;border-bottom:1px solid var(--border);}
+  }
 
   /* ---------- results ---------- */
   .results-card{
@@ -409,6 +453,7 @@
       document.getElementById('view-'+v).hidden = (v!==name);
     });
     document.getElementById('btnEndGame').hidden = (name!=='game');
+    document.body.classList.toggle('game-fullscreen', name === 'game');
   }
 
   function updateBankCountLabel(){
