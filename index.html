@@ -1,0 +1,839 @@
+<title>問答擂台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#10121a;
+    --surface-1:#181b26;
+    --surface-2:#20242f;
+    --surface-3:#2a3040;
+    --border:#2c3140;
+    --text-primary:#f5f6f8;
+    --text-secondary:#9aa0b4;
+    --text-muted:#6b7185;
+    --team-a:#3987e5;
+    --team-a-soft:#1c2c47;
+    --team-b:#d95926;
+    --team-b-soft:#3a2416;
+    --good:#2fd46e;
+    --warn:#fab219;
+    --bad:#e6564f;
+    --radius-lg:20px;
+    --radius-md:14px;
+    --radius-sm:9px;
+    --font-body:'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--text-primary);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{margin:0;text-wrap:balance;}
+  button{font-family:inherit;}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:16px 20px;border-bottom:1px solid var(--border);
+    position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:10;
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.2rem;letter-spacing:.01em;}
+  .brand .flag{display:inline-flex;width:9px;height:9px;border-radius:2px;}
+  .brand .flag.a{background:var(--team-a);}
+  .brand .flag.b{background:var(--team-b);margin-left:-4px;}
+  main{max-width:1080px;margin:0 auto;padding:28px 20px calc(40px + env(safe-area-inset-bottom,0px));}
+  .view{display:flex;flex-direction:column;gap:22px;}
+
+  .btn{
+    appearance:none;border:none;cursor:pointer;border-radius:999px;
+    padding:12px 22px;font-weight:700;font-size:.95rem;color:var(--text-primary);
+    background:var(--surface-2);border:1px solid var(--border);
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  .btn:hover{transform:translateY(-1px);}
+  .btn:active{transform:translateY(0);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+  .btn-primary{
+    background:linear-gradient(120deg,var(--team-a),var(--team-b));
+    color:#fff;border:none;font-size:1.02rem;padding:14px 30px;
+    box-shadow:0 8px 24px -10px rgba(57,135,229,.5);
+  }
+  .btn-ghost{background:transparent;color:var(--text-secondary);}
+  .btn-ghost:hover{color:var(--text-primary);border-color:var(--text-secondary);}
+  .btn-danger{color:var(--bad);}
+  .btn-row{display:flex;gap:12px;flex-wrap:wrap;}
+  .btn-row.center{justify-content:center;}
+  :focus-visible{outline:2px solid var(--team-a);outline-offset:2px;}
+
+  /* ---------- setup ---------- */
+  .setup-card{
+    background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:30px;display:flex;flex-direction:column;gap:24px;
+  }
+  .setup-title{font-size:1.5rem;font-weight:900;}
+  .setup-sub{color:var(--text-secondary);font-size:.92rem;line-height:1.6;max-width:60ch;}
+  .field-block{display:flex;flex-direction:column;gap:10px;}
+  .field-label{font-size:.8rem;font-weight:700;color:var(--text-secondary);letter-spacing:.03em;}
+  .team-inputs{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:560px){.team-inputs{grid-template-columns:1fr;}}
+  .team-field{
+    display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:var(--radius-md);
+    border:1.5px solid var(--tc);background:var(--ts);
+  }
+  .team-field.a{--tc:var(--team-a);--ts:var(--team-a-soft);}
+  .team-field.b{--tc:var(--team-b);--ts:var(--team-b-soft);}
+  .team-field label{font-size:.78rem;font-weight:700;color:var(--text-secondary);}
+  input,select{
+    font:inherit;background:var(--surface-2);border:1px solid var(--border);color:var(--text-primary);
+    border-radius:var(--radius-sm);padding:10px 12px;font-size:.95rem;
+  }
+  input:focus,select:focus{border-color:var(--team-a);}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:560px){.row-2{grid-template-columns:1fr;}}
+  .setup-warning{
+    display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--warn);
+    background:rgba(250,178,25,.1);border:1px solid rgba(250,178,25,.35);
+    padding:10px 14px;border-radius:var(--radius-sm);
+  }
+  .bank-status{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);}
+  .bank-status .count{font-family:var(--font-mono);font-weight:700;font-variant-numeric:tabular-nums;}
+
+  /* ---------- editor ---------- */
+  .editor-card{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:26px;display:flex;flex-direction:column;gap:20px;}
+  .editor-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .bank-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-md);max-height:420px;overflow-y:auto;}
+  table{border-collapse:collapse;width:100%;min-width:820px;}
+  thead th{position:sticky;top:0;background:var(--surface-2);z-index:1;}
+  th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;font-size:.82rem;}
+  th{color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+  td input{width:100%;min-width:80px;padding:7px 8px;font-size:.85rem;}
+  td.q-col input{min-width:170px;}
+  td.del-col{text-align:center;}
+  .icon-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:4px 8px;border-radius:6px;}
+  .icon-btn:hover{color:var(--bad);background:var(--surface-3);}
+  .subhead{font-weight:800;font-size:1rem;margin-bottom:2px;}
+  .hint{color:var(--text-muted);font-size:.8rem;line-height:1.6;}
+  .paste-box{
+    width:100%;min-height:110px;font-family:var(--font-mono);font-size:.8rem;
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text-primary);
+    border-radius:var(--radius-sm);padding:12px;resize:vertical;
+  }
+  .status-line{font-size:.82rem;color:var(--good);min-height:1.2em;}
+  .status-line.err{color:var(--bad);}
+  .import-export{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:760px){.import-export{grid-template-columns:1fr;}}
+  .sub-block{display:flex;flex-direction:column;gap:10px;padding:16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);}
+
+  /* ---------- game ---------- */
+  .arena{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:480px){
+    .arena{gap:8px;}
+    .panel{padding:12px;gap:10px;min-height:360px;border-top-width:3px;}
+    .team-name{font-size:.82rem;}
+    .team-score{font-size:1.1rem;}
+    .score-unit{font-size:.6rem;}
+    .progress-row{font-size:.66rem;}
+    .timer-readout{font-size:.7rem;}
+    .question-card{font-size:.82rem;padding:10px;min-height:46px;line-height:1.45;}
+    .opt-grid{gap:6px;}
+    .opt-btn{padding:8px;font-size:.72rem;gap:6px;}
+    .opt-letter{width:18px;height:18px;font-size:.62rem;}
+  }
+  .panel{
+    background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:22px;display:flex;flex-direction:column;gap:16px;min-height:440px;border-top:4px solid var(--tc);
+  }
+  .panel-a{--tc:var(--team-a);}
+  .panel-b{--tc:var(--team-b);}
+  .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+  .team-name{font-weight:800;font-size:1.05rem;color:var(--tc);}
+  .team-score{font-family:var(--font-mono);font-weight:700;font-size:1.7rem;font-variant-numeric:tabular-nums;text-align:right;}
+  .score-unit{font-size:.68rem;color:var(--text-secondary);margin-left:3px;font-family:var(--font-body);font-weight:500;}
+  .progress-row{display:flex;justify-content:space-between;color:var(--text-secondary);font-size:.82rem;}
+  .timer-readout{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:700;}
+  .timerbar{height:8px;border-radius:5px;background:var(--surface-3);overflow:hidden;}
+  .timerfill{height:100%;width:100%;background:var(--good);transition:width 1s linear,background-color .3s ease;}
+  .timerfill.warn{background:var(--warn);}
+  .timerfill.bad{background:var(--bad);}
+  .question-card{
+    background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);
+    padding:20px;font-size:1.08rem;line-height:1.6;font-weight:700;min-height:70px;
+    display:flex;align-items:center;
+  }
+  .opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;}
+  @media(max-width:420px){.opt-grid{grid-template-columns:1fr;}}
+  .opt-btn{
+    display:flex;align-items:center;gap:10px;text-align:left;padding:14px;border-radius:var(--radius-md);
+    border:1.5px solid var(--border);background:var(--surface-2);color:var(--text-primary);
+    cursor:pointer;font-size:.95rem;line-height:1.4;transition:transform .12s ease,border-color .12s ease,background .12s ease;
+  }
+  .opt-btn:hover:not(:disabled){border-color:var(--tc);transform:translateY(-1px);}
+  .opt-btn:disabled{cursor:default;}
+  .opt-btn.correct{border-color:var(--good);background:rgba(47,212,110,.15);}
+  .opt-btn.wrong{border-color:var(--bad);background:rgba(230,86,79,.15);}
+  .opt-btn.dim{opacity:.55;}
+  .opt-letter{
+    display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;
+    background:var(--surface-3);font-weight:800;font-size:.8rem;flex:none;
+  }
+  .done-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;color:var(--text-secondary);}
+  .done-emoji{font-size:2.6rem;}
+  .done-text{color:var(--text-primary);font-weight:800;font-size:1.15rem;}
+
+  /* ---------- results ---------- */
+  .results-card{
+    background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:32px;display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center;
+  }
+  .winner-banner{font-size:1.4rem;font-weight:900;}
+  .chart-wrap{width:100%;max-width:380px;height:auto;}
+  .result-stats{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;}
+  .result-stat{display:flex;flex-direction:column;gap:4px;min-width:120px;}
+  .result-stat .label{color:var(--text-secondary);font-size:.8rem;font-weight:600;}
+  .result-stat .value{font-family:var(--font-mono);font-weight:700;font-size:1.35rem;font-variant-numeric:tabular-nums;}
+
+  [hidden]{display:none!important;}
+</style>
+
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span>🏆</span><span>問答擂台</span><span class="flag a"></span><span class="flag b"></span></div>
+    <div class="topbar-actions">
+      <button id="btnEndGame" class="btn btn-ghost btn-danger" hidden>結束遊戲</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="view-setup" class="view">
+      <div class="setup-card">
+        <div>
+          <div class="setup-title">分組問答擂台</div>
+          <p class="setup-sub">兩隊在同一畫面上各自作答，每題限時倒數，答對得分，時間到自動進入下一題。全部作答完畢後自動結算分數，看誰是擂台冠軍！</p>
+        </div>
+
+        <div class="field-block">
+          <div class="field-label">隊伍名稱</div>
+          <div class="team-inputs">
+            <div class="team-field a">
+              <label for="inputTeamA">左方隊伍</label>
+              <input id="inputTeamA" type="text" maxlength="12" placeholder="第一隊">
+            </div>
+            <div class="team-field b">
+              <label for="inputTeamB">右方隊伍</label>
+              <input id="inputTeamB" type="text" maxlength="12" placeholder="第二隊">
+            </div>
+          </div>
+        </div>
+
+        <div class="row-2">
+          <div class="field-block">
+            <label class="field-label" for="selectSeconds">每題作答時間</label>
+            <select id="selectSeconds">
+              <option value="10">10 秒</option>
+              <option value="15">15 秒</option>
+              <option value="20" selected>20 秒</option>
+              <option value="30">30 秒</option>
+            </select>
+          </div>
+          <div class="field-block">
+            <label class="field-label" for="selectCount">本場題數</label>
+            <select id="selectCount">
+              <option value="5">5 題</option>
+              <option value="10" selected>10 題</option>
+              <option value="15">15 題</option>
+              <option value="20">20 題</option>
+              <option value="all">全部題目</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="bank-status">
+          <span>目前題庫共 <span class="count" id="bankCountLabel">0</span> 題</span>
+          <button id="btnOpenEditor" class="btn btn-ghost">📋 題庫管理</button>
+        </div>
+
+        <div id="setupWarning" class="setup-warning" hidden>
+          ⚠️ 題庫至少需要 4 題才能開始遊戲，請先到「題庫管理」新增題目。
+        </div>
+
+        <div class="btn-row">
+          <button id="btnStart" class="btn btn-primary">⚡ 開始遊戲</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-editor" class="view" hidden>
+      <div class="editor-card">
+        <div class="editor-head">
+          <div>
+            <div class="subhead">題庫管理</div>
+            <div class="hint">直接編輯下方表格，或用貼上功能從 Excel 快速匯入整批題目。</div>
+          </div>
+          <button id="btnBackFromEditor" class="btn btn-ghost">← 返回設定</button>
+        </div>
+
+        <div class="bank-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:26px;">#</th>
+                <th style="min-width:180px;">題目</th>
+                <th>選項 A</th><th>選項 B</th><th>選項 C</th><th>選項 D</th>
+                <th style="width:70px;">正解</th>
+                <th style="width:36px;"></th>
+              </tr>
+            </thead>
+            <tbody id="bankTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="btn-row">
+          <button id="btnAddRow" class="btn btn-ghost">＋ 新增一題</button>
+          <button id="btnRestoreDefault" class="btn btn-ghost">↺ 還原範例題庫</button>
+        </div>
+
+        <div class="import-export">
+          <div class="sub-block">
+            <div class="subhead" style="font-size:.9rem;">從 Excel 貼上匯入</div>
+            <div class="hint">在 Excel 依序排好「題目、選項A、選項B、選項C、選項D、正解」六個欄位，整塊複製後貼到下面，每列一題。正解可填 1-4 或 A-D。</div>
+            <textarea id="importArea" class="paste-box" placeholder="題目	選項A	選項B	選項C	選項D	正解&#10;例：台灣最高的山是？	玉山	雪山	合歡山	阿里山	1"></textarea>
+            <div class="btn-row">
+              <button id="btnImportAppend" class="btn btn-ghost">新增到題庫</button>
+              <button id="btnImportReplace" class="btn btn-ghost btn-danger">取代整個題庫</button>
+            </div>
+            <div id="importStatus" class="status-line"></div>
+          </div>
+          <div class="sub-block">
+            <div class="subhead" style="font-size:.9rem;">複製題庫到 Excel</div>
+            <div class="hint">按下按鈕後會嘗試自動複製，也可以直接在下方文字框全選複製，貼回 Excel 即可備份或編輯。</div>
+            <button id="btnExport" class="btn btn-ghost">📤 產生匯出文字</button>
+            <textarea id="exportArea" class="paste-box" readonly placeholder="按下上方按鈕產生內容…"></textarea>
+            <div id="exportStatus" class="status-line"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-game" class="view" hidden>
+      <div class="arena">
+        <div class="panel panel-a" id="panelA"></div>
+        <div class="panel panel-b" id="panelB"></div>
+      </div>
+    </section>
+
+    <section id="view-results" class="view" hidden>
+      <div id="resultsContent"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const $ = (sel, root) => (root||document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root||document).querySelectorAll(sel));
+  const LS_BANK = 'qaArena.bank.v1';
+  const LS_SETTINGS = 'qaArena.settings.v1';
+
+  function escapeHTML(str){
+    return String(str==null?'':str).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+  function genId(){
+    return 'q_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  }
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+
+  function defaultBank(){
+    const rows = [
+      ['「守株待兔」這句成語的意思是？',['形容做事非常勤勞','比喻不知變通、心存僥倖','形容非常害怕','比喻互相幫助合作'],1],
+      ['台灣最高的山是？',['玉山','雪山','合歡山','阿里山'],0],
+      ['3/4 + 1/8 等於多少？',['7/8','5/8','1','3/8'],0],
+      ['「一日之計在於晨」是什麼意思？',['一天的計畫要在早上安排好','每天都要記帳','要早睡早起才健康','早餐要吃得豐盛'],0],
+      ['世界上面積最大的海洋是？',['大西洋','太平洋','印度洋','北極海'],1],
+      ['6 × 7 等於多少？',['42','36','48','49'],0],
+      ['「入境隨俗」的意思是？',['到別人家要送禮物','到新地方要遵守當地習俗','出國一定要學外語','要尊敬長輩'],1],
+      ['人體最大的器官是？',['心臟','肝臟','皮膚','大腦'],2],
+      ['下列何者不是 12 的因數？',['3','4','5','6'],2],
+      ['「畫蛇添足」用來比喻？',['做了多餘的事，反而壞事','畫畫的技巧很好','做事非常小心謹慎','互相合作完成任務'],0]
+    ];
+    return rows.map(r => ({id: genId(), q:r[0], options:r[1].slice(), correct:r[2]}));
+  }
+
+  function loadBank(){
+    try{
+      const raw = localStorage.getItem(LS_BANK);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(Array.isArray(parsed) && parsed.length) return parsed;
+      }
+    }catch(e){}
+    const def = defaultBank();
+    saveBank(def);
+    return def;
+  }
+  function saveBank(b){
+    try{ localStorage.setItem(LS_BANK, JSON.stringify(b)); }catch(e){}
+  }
+  function loadSettings(){
+    const def = {teamA:'第一隊', teamB:'第二隊', seconds:'20', count:'10'};
+    try{
+      const raw = localStorage.getItem(LS_SETTINGS);
+      if(raw) return Object.assign(def, JSON.parse(raw));
+    }catch(e){}
+    return def;
+  }
+  function saveSettings(s){
+    try{ localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); }catch(e){}
+  }
+
+  let bank = loadBank();
+  let settings = loadSettings();
+  let game = null;
+
+  // ---------- view switching ----------
+  function showView(name){
+    ['setup','editor','game','results'].forEach(v=>{
+      document.getElementById('view-'+v).hidden = (v!==name);
+    });
+    document.getElementById('btnEndGame').hidden = (name!=='game');
+  }
+
+  function updateBankCountLabel(){
+    $('#bankCountLabel').textContent = bank.length;
+    refreshStartButtonState();
+  }
+  function refreshStartButtonState(){
+    const warn = $('#setupWarning');
+    const btn = $('#btnStart');
+    if(bank.length < 4){
+      warn.hidden = false;
+      btn.disabled = true;
+    } else {
+      warn.hidden = true;
+      btn.disabled = false;
+    }
+  }
+
+  // ---------- setup ----------
+  function initSetupInputs(){
+    $('#inputTeamA').value = settings.teamA;
+    $('#inputTeamB').value = settings.teamB;
+    $('#selectSeconds').value = settings.seconds;
+    $('#selectCount').value = settings.count;
+    updateBankCountLabel();
+  }
+
+  $('#btnOpenEditor').addEventListener('click', ()=>{
+    renderEditorTable();
+    showView('editor');
+  });
+  $('#btnBackFromEditor').addEventListener('click', ()=>{
+    updateBankCountLabel();
+    showView('setup');
+  });
+
+  $('#btnStart').addEventListener('click', startGame);
+
+  function readSettingsFromForm(){
+    return {
+      teamA: ($('#inputTeamA').value.trim() || '第一隊'),
+      teamB: ($('#inputTeamB').value.trim() || '第二隊'),
+      seconds: $('#selectSeconds').value,
+      count: $('#selectCount').value
+    };
+  }
+
+  function startGame(){
+    if(bank.length < 4) return;
+    settings = readSettingsFromForm();
+    saveSettings(settings);
+
+    const secs = parseInt(settings.seconds,10) || 20;
+    let pool = shuffle(bank);
+    const n = settings.count === 'all' ? pool.length : Math.min(parseInt(settings.count,10)||10, pool.length);
+    const questions = pool.slice(0, n).map(q => ({q:q.q, options:q.options.slice(), correct:q.correct}));
+
+    game = {
+      questions: questions,
+      seconds: secs,
+      teams: {
+        A: newTeamState(settings.teamA),
+        B: newTeamState(settings.teamB)
+      }
+    };
+
+    showView('game');
+    ['A','B'].forEach(t => { renderPanel(t); startTimer(t); });
+  }
+
+  function newTeamState(name){
+    return {name:name, idx:0, score:0, correctCount:0, done:false, order:null, timeLeft:0, timerId:null, locked:false};
+  }
+
+  function currentQuestion(team){
+    return game.questions[game.teams[team].idx];
+  }
+
+  // ---------- game panel rendering ----------
+  function renderPanel(team){
+    const t = game.teams[team];
+    const panel = $('#panel'+team);
+    const total = game.questions.length;
+    if(t.idx >= total){
+      t.done = true;
+      panel.innerHTML = doneTemplate(t, total);
+      checkBothDone();
+      return;
+    }
+    if(!t.order) t.order = shuffle([0,1,2,3]);
+    t.locked = false;
+    const q = currentQuestion(team);
+    panel.innerHTML = questionTemplate(team, t, q, total);
+    $$('.opt-btn', panel).forEach(btn=>{
+      btn.addEventListener('click', ()=> handleAnswer(team, parseInt(btn.dataset.idx,10)));
+    });
+  }
+
+  function questionTemplate(team, t, q, total){
+    const letters = ['A','B','C','D'];
+    const opts = t.order.map((origIdx, dispIdx) => (
+      '<button class="opt-btn" data-idx="'+dispIdx+'">'+
+      '<span class="opt-letter">'+letters[dispIdx]+'</span>'+
+      '<span class="opt-text">'+escapeHTML(q.options[origIdx])+'</span>'+
+      '</button>'
+    )).join('');
+    return (
+      '<div class="panel-head">'+
+        '<div class="team-name">'+escapeHTML(t.name)+'</div>'+
+        '<div class="team-score">'+t.score+'<span class="score-unit">分</span></div>'+
+      '</div>'+
+      '<div class="progress-row"><span>第 '+(t.idx+1)+' / '+total+' 題</span><span class="timer-readout" id="timer'+team+'">'+game.seconds+'s</span></div>'+
+      '<div class="timerbar"><div class="timerfill" id="timerfill'+team+'" style="width:100%"></div></div>'+
+      '<div class="question-card">'+escapeHTML(q.q)+'</div>'+
+      '<div class="opt-grid">'+opts+'</div>'
+    );
+  }
+
+  function doneTemplate(t, total){
+    return (
+      '<div class="panel-head">'+
+        '<div class="team-name">'+escapeHTML(t.name)+'</div>'+
+        '<div class="team-score">'+t.score+'<span class="score-unit">分</span></div>'+
+      '</div>'+
+      '<div class="done-state">'+
+        '<div class="done-emoji">🎉</div>'+
+        '<div class="done-text">已完成全部題目！</div>'+
+        '<div>答對 '+t.correctCount+' / '+total+' 題</div>'+
+      '</div>'
+    );
+  }
+
+  // ---------- timer ----------
+  function startTimer(team){
+    const t = game.teams[team];
+    if(t.done) return;
+    clearInterval(t.timerId);
+    t.timeLeft = game.seconds;
+    updateTimerUI(team);
+    t.timerId = setInterval(()=>{
+      t.timeLeft -= 1;
+      if(t.timeLeft <= 0){
+        clearInterval(t.timerId);
+        t.timeLeft = 0;
+        updateTimerUI(team);
+        handleTimeUp(team);
+      } else {
+        updateTimerUI(team);
+      }
+    }, 1000);
+  }
+
+  function updateTimerUI(team){
+    const t = game.teams[team];
+    const readout = document.getElementById('timer'+team);
+    const fill = document.getElementById('timerfill'+team);
+    if(!readout || !fill) return;
+    readout.textContent = Math.max(t.timeLeft,0) + 's';
+    const pct = Math.max(t.timeLeft,0) / game.seconds * 100;
+    fill.style.width = pct + '%';
+    fill.classList.remove('warn','bad');
+    if(pct <= 20) fill.classList.add('bad');
+    else if(pct <= 50) fill.classList.add('warn');
+  }
+
+  // ---------- answering ----------
+  function handleAnswer(team, dispIdx){
+    const t = game.teams[team];
+    if(t.locked || t.done) return;
+    t.locked = true;
+    clearInterval(t.timerId);
+    const q = currentQuestion(team);
+    const origIdx = t.order[dispIdx];
+    const correctDisp = t.order.indexOf(q.correct);
+    const isCorrect = (origIdx === q.correct);
+    if(isCorrect){ t.score += 10; t.correctCount += 1; }
+    const panel = $('#panel'+team);
+    $$('.opt-btn', panel).forEach((btn,i)=>{
+      btn.disabled = true;
+      if(i === correctDisp) btn.classList.add('correct');
+      else if(i === dispIdx) btn.classList.add('wrong');
+      else btn.classList.add('dim');
+    });
+    const scoreEl = $('.team-score', panel);
+    if(scoreEl) scoreEl.innerHTML = t.score + '<span class="score-unit">分</span>';
+    setTimeout(()=> advance(team), 1100);
+  }
+
+  function handleTimeUp(team){
+    const t = game.teams[team];
+    if(t.locked || t.done) return;
+    t.locked = true;
+    const q = currentQuestion(team);
+    const correctDisp = t.order.indexOf(q.correct);
+    const panel = $('#panel'+team);
+    $$('.opt-btn', panel).forEach((btn,i)=>{
+      btn.disabled = true;
+      if(i === correctDisp) btn.classList.add('correct');
+      else btn.classList.add('dim');
+    });
+    setTimeout(()=> advance(team), 1300);
+  }
+
+  function advance(team){
+    const t = game.teams[team];
+    t.idx += 1;
+    t.order = null;
+    renderPanel(team);
+    if(!t.done) startTimer(team);
+  }
+
+  function checkBothDone(){
+    if(game.teams.A.done && game.teams.B.done){
+      setTimeout(endGame, 900);
+    }
+  }
+
+  $('#btnEndGame').addEventListener('click', ()=>{
+    if(!game) return;
+    const ok = window.confirm('確定要提前結束遊戲並查看結果嗎？');
+    if(ok) endGame();
+  });
+
+  function endGame(){
+    if(!game) return;
+    clearInterval(game.teams.A.timerId);
+    clearInterval(game.teams.B.timerId);
+    showResults();
+  }
+
+  // ---------- results ----------
+  function showResults(){
+    const A = game.teams.A, B = game.teams.B;
+    const total = game.questions.length;
+    const maxScore = Math.max(A.score, B.score, 10);
+    const chartH = 160, barW = 90, gap = 46;
+    const hA = Math.round((A.score/maxScore) * chartH);
+    const hB = Math.round((B.score/maxScore) * chartH);
+    const baseY = chartH + 20;
+    const xA = 40, xB = xA + barW + gap;
+    const viewW = xB + barW + 40;
+    const viewH = chartH + 60;
+
+    const svg = (
+      '<svg class="chart-wrap" viewBox="0 0 '+viewW+' '+viewH+'" role="img" aria-label="兩隊分數比較圖">'+
+        '<line x1="20" y1="'+baseY+'" x2="'+(viewW-20)+'" y2="'+baseY+'" stroke="var(--border)" stroke-width="1.5"/>'+
+        '<rect x="'+xA+'" y="'+(baseY-hA)+'" width="'+barW+'" height="'+Math.max(hA,2)+'" rx="8" fill="var(--team-a)"/>'+
+        '<text x="'+(xA+barW/2)+'" y="'+(baseY-hA-14)+'" text-anchor="middle" fill="var(--text-primary)" font-weight="700" font-size="22" font-family="JetBrains Mono, monospace">'+A.score+'</text>'+
+        '<text x="'+(xA+barW/2)+'" y="'+(baseY+24)+'" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-family="Noto Sans TC, sans-serif">'+escapeHTML(A.name)+'</text>'+
+        '<rect x="'+xB+'" y="'+(baseY-hB)+'" width="'+barW+'" height="'+Math.max(hB,2)+'" rx="8" fill="var(--team-b)"/>'+
+        '<text x="'+(xB+barW/2)+'" y="'+(baseY-hB-14)+'" text-anchor="middle" fill="var(--text-primary)" font-weight="700" font-size="22" font-family="JetBrains Mono, monospace">'+B.score+'</text>'+
+        '<text x="'+(xB+barW/2)+'" y="'+(baseY+24)+'" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-family="Noto Sans TC, sans-serif">'+escapeHTML(B.name)+'</text>'+
+      '</svg>'
+    );
+
+    let banner;
+    if(A.score === B.score){
+      banner = '🤝 平手！雙方勢均力敵';
+    } else {
+      const winner = A.score > B.score ? A : B;
+      banner = '🏆 '+escapeHTML(winner.name)+' 獲勝！';
+    }
+
+    const html = (
+      '<div class="results-card">'+
+        '<div class="winner-banner">'+banner+'</div>'+
+        svg+
+        '<div class="result-stats">'+
+          '<div class="result-stat"><span class="label">'+escapeHTML(A.name)+' 正確率</span><span class="value">'+A.correctCount+' / '+total+'</span></div>'+
+          '<div class="result-stat"><span class="label">'+escapeHTML(B.name)+' 正確率</span><span class="value">'+B.correctCount+' / '+total+'</span></div>'+
+        '</div>'+
+        '<div class="btn-row center">'+
+          '<button id="btnReplay" class="btn btn-primary">🔁 再玩一次（同樣設定）</button>'+
+          '<button id="btnBackSetup" class="btn btn-ghost">⚙️ 回到設定</button>'+
+        '</div>'+
+      '</div>'
+    );
+    $('#resultsContent').innerHTML = html;
+    $('#btnReplay').addEventListener('click', startGame);
+    $('#btnBackSetup').addEventListener('click', ()=>{ initSetupInputs(); showView('setup'); });
+    showView('results');
+  }
+
+  // ---------- editor ----------
+  function renderEditorTable(){
+    const tbody = $('#bankTableBody');
+    tbody.innerHTML = bank.map((q, i) => rowTemplate(q, i)).join('');
+    $$('.f-q', tbody).forEach(el => el.addEventListener('input', onCellEdit));
+    $$('.f-opt', tbody).forEach(el => el.addEventListener('input', onCellEdit));
+    $$('.f-correct', tbody).forEach(el => el.addEventListener('change', onCellEdit));
+    $$('.row-del', tbody).forEach(el => el.addEventListener('click', onRowDelete));
+    updateBankCountLabel();
+  }
+
+  function rowTemplate(q, i){
+    const opts = q.options.map((opt, oi) => (
+      '<td><input class="f-opt" data-id="'+q.id+'" data-oi="'+oi+'" type="text" value="'+escapeHTML(opt)+'"></td>'
+    )).join('');
+    const correctSelect = (
+      '<select class="f-correct" data-id="'+q.id+'">'+
+        [0,1,2,3].map(ci => '<option value="'+ci+'"'+(q.correct===ci?' selected':'')+'>'+String.fromCharCode(65+ci)+'</option>').join('')+
+      '</select>'
+    );
+    return (
+      '<tr>'+
+        '<td>'+(i+1)+'</td>'+
+        '<td class="q-col"><input class="f-q" data-id="'+q.id+'" type="text" value="'+escapeHTML(q.q)+'"></td>'+
+        opts+
+        '<td>'+correctSelect+'</td>'+
+        '<td class="del-col"><button class="icon-btn row-del" data-id="'+q.id+'" title="刪除">✕</button></td>'+
+      '</tr>'
+    );
+  }
+
+  function findQ(id){ return bank.find(x => x.id === id); }
+
+  function onCellEdit(e){
+    const el = e.target;
+    const id = el.dataset.id;
+    const q = findQ(id);
+    if(!q) return;
+    if(el.classList.contains('f-q')) q.q = el.value;
+    else if(el.classList.contains('f-opt')) q.options[parseInt(el.dataset.oi,10)] = el.value;
+    else if(el.classList.contains('f-correct')) q.correct = parseInt(el.value,10);
+    saveBank(bank);
+  }
+
+  function onRowDelete(e){
+    const id = e.target.dataset.id;
+    bank = bank.filter(x => x.id !== id);
+    saveBank(bank);
+    renderEditorTable();
+  }
+
+  $('#btnAddRow').addEventListener('click', ()=>{
+    bank.push({id: genId(), q:'', options:['','','',''], correct:0});
+    saveBank(bank);
+    renderEditorTable();
+  });
+
+  $('#btnRestoreDefault').addEventListener('click', ()=>{
+    const ok = window.confirm('這會把整個題庫換成範例題目，目前的題目將會遺失，確定要繼續嗎？');
+    if(!ok) return;
+    bank = defaultBank();
+    saveBank(bank);
+    renderEditorTable();
+  });
+
+  // ---------- import ----------
+  function parseImportText(text){
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const rows = [];
+    let skipped = 0;
+    lines.forEach(line => {
+      const cols = line.indexOf('\t') >= 0 ? line.split('\t') : line.split(',');
+      if(cols.length < 6){ skipped++; return; }
+      const q = cols[0].trim();
+      const opts = [cols[1],cols[2],cols[3],cols[4]].map(s => (s||'').trim());
+      let raw = (cols[5]||'').trim().toUpperCase();
+      let correct = 0;
+      if(/^[1-4]$/.test(raw)) correct = parseInt(raw,10) - 1;
+      else if(/^[A-D]$/.test(raw)) correct = raw.charCodeAt(0) - 65;
+      else { skipped++; return; }
+      if(!q || opts.some(o => !o)){ skipped++; return; }
+      rows.push({id: genId(), q:q, options:opts, correct:correct});
+    });
+    return {rows, skipped};
+  }
+
+  $('#btnImportAppend').addEventListener('click', ()=>{
+    const {rows, skipped} = parseImportText($('#importArea').value);
+    const status = $('#importStatus');
+    if(rows.length === 0){
+      status.className = 'status-line err';
+      status.textContent = '沒有成功解析出任何題目，請確認格式（題目、選項A-D、正解，以 Tab 或逗號分隔）。';
+      return;
+    }
+    bank = bank.concat(rows);
+    saveBank(bank);
+    renderEditorTable();
+    status.className = 'status-line';
+    status.textContent = '已新增 '+rows.length+' 題到題庫'+(skipped? '（略過 '+skipped+' 列格式不符）':'') + '。';
+  });
+
+  $('#btnImportReplace').addEventListener('click', ()=>{
+    const {rows, skipped} = parseImportText($('#importArea').value);
+    const status = $('#importStatus');
+    if(rows.length === 0){
+      status.className = 'status-line err';
+      status.textContent = '沒有成功解析出任何題目，題庫未被取代。';
+      return;
+    }
+    const ok = window.confirm('這會刪除目前題庫所有題目，改成貼上的 '+rows.length+' 題，確定要繼續嗎？');
+    if(!ok) return;
+    bank = rows;
+    saveBank(bank);
+    renderEditorTable();
+    status.className = 'status-line';
+    status.textContent = '題庫已取代，共 '+rows.length+' 題'+(skipped? '（略過 '+skipped+' 列格式不符）':'') + '。';
+  });
+
+  // ---------- export ----------
+  $('#btnExport').addEventListener('click', ()=>{
+    const tsv = bank.map(q => [q.q, q.options[0], q.options[1], q.options[2], q.options[3], (q.correct+1)].join('\t')).join('\n');
+    const area = $('#exportArea');
+    area.value = tsv;
+    const status = $('#exportStatus');
+    area.focus();
+    area.select();
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(tsv).then(()=>{
+        status.className = 'status-line';
+        status.textContent = '已複製到剪貼簿，可直接貼到 Excel。';
+      }).catch(()=>{
+        status.className = 'status-line';
+        status.textContent = '文字已產生，請在上方文字框內全選複製。';
+      });
+    } else {
+      status.className = 'status-line';
+      status.textContent = '文字已產生，請在上方文字框內全選複製。';
+    }
+  });
+
+  // ---------- init ----------
+  initSetupInputs();
+  showView('setup');
+})();
+</script>

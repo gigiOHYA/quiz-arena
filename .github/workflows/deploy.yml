@@ -1,0 +1,59 @@
+name: Test and deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check index.html exists and is non-empty
+        run: test -s index.html
+
+      - name: Extract and syntax-check inline <script> blocks
+        run: |
+          node -e "
+          const fs = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const matches = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+          if (matches.length === 0) {
+            console.error('No <script> block found in index.html');
+            process.exit(1);
+          }
+          matches.forEach((m, i) => {
+            fs.writeFileSync('_script_' + i + '.js', m[1]);
+          });
+          console.log('Extracted ' + matches.length + ' script block(s)');
+          "
+          for f in _script_*.js; do
+            echo "Checking $f"
+            node --check "$f"
+          done
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - id: deployment
+        uses: actions/deploy-pages@v4
