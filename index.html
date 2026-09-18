@@ -170,6 +170,7 @@
     display:flex;align-items:center;gap:10px;text-align:left;padding:14px;border-radius:var(--radius-md);
     border:1.5px solid var(--border);background:var(--surface-2);color:var(--text-primary);
     cursor:pointer;font-size:.95rem;line-height:1.4;transition:transform .12s ease,border-color .12s ease,background .12s ease;
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;
   }
   .opt-btn:hover:not(:disabled){border-color:var(--tc);transform:translateY(-1px);}
   .opt-btn:disabled{cursor:default;}
@@ -192,11 +193,15 @@
   body.game-fullscreen .setup-sub{display:none;}
   body.game-fullscreen main{
     max-width:none;margin:0;padding:0;
-    height:100vh;height:100dvh;
-    padding-top:52px;box-sizing:border-box;
+    height:calc(100vh - 52px);height:calc(100dvh - 52px);
+    box-sizing:border-box;
+    display:flex;flex-direction:column;
+  }
+  body.game-fullscreen #view-game{
+    flex:1;min-height:0;display:flex;flex-direction:column;gap:0;
   }
   body.game-fullscreen .arena{
-    height:100%;gap:0;
+    flex:1;min-height:0;gap:0;
   }
   body.game-fullscreen .panel{
     border-radius:0;border-top-width:6px;
@@ -509,14 +514,15 @@
     const secs = parseInt(settings.seconds,10) || 20;
     let pool = shuffle(bank);
     const n = settings.count === 'all' ? pool.length : Math.min(parseInt(settings.count,10)||10, pool.length);
-    const questions = pool.slice(0, n).map(q => ({q:q.q, options:q.options.slice(), correct:q.correct}));
+    const selected = pool.slice(0, n).map(q => ({q:q.q, options:q.options.slice(), correct:q.correct}));
 
     game = {
-      questions: questions,
+      totalCount: selected.length,
       seconds: secs,
       teams: {
-        A: newTeamState(settings.teamA),
-        B: newTeamState(settings.teamB)
+        // each team gets its own independently-shuffled question order, drawn from the same pool
+        A: newTeamState(settings.teamA, shuffle(selected)),
+        B: newTeamState(settings.teamB, shuffle(selected))
       }
     };
 
@@ -524,19 +530,20 @@
     ['A','B'].forEach(t => { renderPanel(t); startTimer(t); });
   }
 
-  function newTeamState(name){
-    return {name:name, idx:0, score:0, correctCount:0, done:false, order:null, timeLeft:0, timerId:null, locked:false};
+  function newTeamState(name, questions){
+    return {name:name, questions:questions, idx:0, score:0, correctCount:0, done:false, order:null, timeLeft:0, timerId:null, locked:false};
   }
 
   function currentQuestion(team){
-    return game.questions[game.teams[team].idx];
+    const t = game.teams[team];
+    return t.questions[t.idx];
   }
 
   // ---------- game panel rendering ----------
   function renderPanel(team){
     const t = game.teams[team];
     const panel = $('#panel'+team);
-    const total = game.questions.length;
+    const total = t.questions.length;
     if(t.idx >= total){
       t.done = true;
       panel.innerHTML = doneTemplate(t, total);
@@ -547,8 +554,11 @@
     t.locked = false;
     const q = currentQuestion(team);
     panel.innerHTML = questionTemplate(team, t, q, total);
+    // pointerdown (not click) so two people tapping their own side's button
+    // at the same instant on a shared touchscreen both register reliably —
+    // browsers can drop/merge synthetic click events on simultaneous multi-touch.
     $$('.opt-btn', panel).forEach(btn=>{
-      btn.addEventListener('click', ()=> handleAnswer(team, parseInt(btn.dataset.idx,10)));
+      btn.addEventListener('pointerdown', ()=> handleAnswer(team, parseInt(btn.dataset.idx,10)));
     });
   }
 
@@ -687,7 +697,7 @@
   // ---------- results ----------
   function showResults(){
     const A = game.teams.A, B = game.teams.B;
-    const total = game.questions.length;
+    const total = game.totalCount;
     const maxScore = Math.max(A.score, B.score, 10);
     const chartH = 160, barW = 90, gap = 46;
     const hA = Math.round((A.score/maxScore) * chartH);
