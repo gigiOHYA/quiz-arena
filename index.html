@@ -512,17 +512,27 @@
     saveSettings(settings);
 
     const secs = parseInt(settings.seconds,10) || 20;
-    let pool = shuffle(bank);
-    const n = settings.count === 'all' ? pool.length : Math.min(parseInt(settings.count,10)||10, pool.length);
-    const selected = pool.slice(0, n).map(q => ({q:q.q, options:q.options.slice(), correct:q.correct}));
+
+    // split the bank into two disjoint halves so the two teams get
+    // genuinely different questions, not just a different order of the same ones
+    const shuffledBank = shuffle(bank);
+    const half = Math.floor(shuffledBank.length / 2);
+    const poolA = shuffledBank.slice(0, half);
+    const poolB = shuffledBank.slice(half, half * 2);
+
+    const desired = settings.count === 'all' ? Infinity : (parseInt(settings.count,10) || 10);
+    const nA = Math.min(desired, poolA.length);
+    const nB = Math.min(desired, poolB.length);
+    const toGameQ = q => ({q:q.q, options:q.options.slice(), correct:q.correct});
+    const selectedA = poolA.slice(0, nA).map(toGameQ);
+    const selectedB = poolB.slice(0, nB).map(toGameQ);
 
     game = {
-      totalCount: selected.length,
       seconds: secs,
       teams: {
-        // each team gets its own independently-shuffled question order, drawn from the same pool
-        A: newTeamState(settings.teamA, shuffle(selected)),
-        B: newTeamState(settings.teamB, shuffle(selected))
+        // disjoint question sets, so team A and team B never see the same question
+        A: newTeamState(settings.teamA, selectedA),
+        B: newTeamState(settings.teamB, selectedB)
       }
     };
 
@@ -697,7 +707,7 @@
   // ---------- results ----------
   function showResults(){
     const A = game.teams.A, B = game.teams.B;
-    const total = game.totalCount;
+    const totalA = A.questions.length, totalB = B.questions.length;
     const maxScore = Math.max(A.score, B.score, 10);
     const chartH = 160, barW = 90, gap = 46;
     const hA = Math.round((A.score/maxScore) * chartH);
@@ -732,8 +742,8 @@
         '<div class="winner-banner">'+banner+'</div>'+
         svg+
         '<div class="result-stats">'+
-          '<div class="result-stat"><span class="label">'+escapeHTML(A.name)+' 正確率</span><span class="value">'+A.correctCount+' / '+total+'</span></div>'+
-          '<div class="result-stat"><span class="label">'+escapeHTML(B.name)+' 正確率</span><span class="value">'+B.correctCount+' / '+total+'</span></div>'+
+          '<div class="result-stat"><span class="label">'+escapeHTML(A.name)+' 正確率</span><span class="value">'+A.correctCount+' / '+totalA+'</span></div>'+
+          '<div class="result-stat"><span class="label">'+escapeHTML(B.name)+' 正確率</span><span class="value">'+B.correctCount+' / '+totalB+'</span></div>'+
         '</div>'+
         '<div class="btn-row center">'+
           '<button id="btnReplay" class="btn btn-primary">🔁 再玩一次（同樣設定）</button>'+
