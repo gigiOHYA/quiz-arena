@@ -1,904 +1,469 @@
-<title>問答擂台</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap">
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>五年級小考成績總覽</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   :root{
-    color-scheme: light;
-    --bg:#f2f4f7;
-    --surface-1:#ffffff;
-    --surface-2:#eef1f5;
-    --surface-3:#e1e5ec;
-    --border:#d6dbe3;
-    --text-primary:#161821;
-    --text-secondary:#565c6b;
-    --text-muted:#8a8f9c;
-    --team-a:#2a78d6;
-    --team-a-soft:#e5eefb;
-    --team-b:#d9601f;
-    --team-b-soft:#fbe9dd;
-    --good:#1f8a3b;
-    --warn:#c97a00;
-    --bad:#d1453f;
-    --radius-lg:20px;
-    --radius-md:14px;
-    --radius-sm:9px;
-    --font-body:'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;
-    --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+    --paper:#EEF2ED;
+    --paper-line:#D3DCD2;
+    --ink:#1E2B27;
+    --ink-soft:#4B5A54;
+    --pen-red:#C4433B;
+    --pen-red-soft:#E7B4AE;
+    --sage:#5C8A78;
+    --card:#FBFAF6;
   }
   *{box-sizing:border-box;}
   body{
-    background:var(--bg);
-    color:var(--text-primary);
-    font-family:var(--font-body);
-    -webkit-font-smoothing:antialiased;
+    margin:0;
+    background-color:var(--paper);
+    background-image:
+      linear-gradient(var(--paper-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color:var(--ink);
+    font-family: "Microsoft JhengHei","PingFang TC","Noto Sans TC",-apple-system,sans-serif;
+    line-height:1.5;
+    min-height:100vh;
   }
-  h1,h2,h3{margin:0;text-wrap:balance;}
-  button{font-family:inherit;}
-  .topbar{
-    display:flex;align-items:center;justify-content:space-between;gap:12px;
-    padding:16px 20px;border-bottom:1px solid var(--border);
-    position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:10;
-  }
-  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.2rem;letter-spacing:.01em;}
-  .brand .flag{display:inline-flex;width:9px;height:9px;border-radius:2px;}
-  .brand .flag.a{background:var(--team-a);}
-  .brand .flag.b{background:var(--team-b);margin-left:-4px;}
-  main{max-width:1080px;margin:0 auto;padding:28px 20px calc(40px + env(safe-area-inset-bottom,0px));}
-  .view{display:flex;flex-direction:column;gap:22px;}
+  .wrap{max-width:920px;margin:0 auto;padding:36px 20px 80px;}
 
-  .btn{
-    appearance:none;border:none;cursor:pointer;border-radius:999px;
-    padding:12px 22px;font-weight:700;font-size:.95rem;color:var(--text-primary);
-    background:var(--surface-2);border:1px solid var(--border);
-    transition:transform .12s ease, opacity .12s ease;
+  header{margin-bottom:28px;}
+  .eyebrow{
+    display:inline-block;
+    font-size:13px;
+    color:var(--sage);
+    border:1.5px solid var(--sage);
+    border-radius:3px;
+    padding:2px 8px;
+    transform:rotate(-2deg);
+    margin-bottom:10px;
   }
-  .btn:hover{transform:translateY(-1px);}
-  .btn:active{transform:translateY(0);}
-  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
-  .btn-primary{
-    background:linear-gradient(120deg,var(--team-a),var(--team-b));
-    color:#fff;border:none;font-size:1.02rem;padding:14px 30px;
-    box-shadow:0 8px 24px -10px rgba(42,120,214,.35);
-  }
-  .btn-ghost{background:transparent;color:var(--text-secondary);}
-  .btn-ghost:hover{color:var(--text-primary);border-color:var(--text-secondary);}
-  .btn-danger{color:var(--bad);}
-  .btn-row{display:flex;gap:12px;flex-wrap:wrap;}
-  .btn-row.center{justify-content:center;}
-  :focus-visible{outline:2px solid var(--team-a);outline-offset:2px;}
+  h1{font-size:32px;margin:0 0 6px;font-weight:700;letter-spacing:0.5px;}
+  header p{margin:0;color:var(--ink-soft);font-size:14.5px;}
 
-  /* ---------- setup ---------- */
-  .setup-card{
-    background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius-lg);
-    padding:30px;display:flex;flex-direction:column;gap:24px;
+  nav.tabs{display:flex;gap:6px;margin:26px 0 22px;border-bottom:2px solid var(--ink);flex-wrap:wrap;}
+  nav.tabs button{
+    font-family:inherit;font-size:16px;font-weight:700;background:transparent;
+    border:2px solid var(--ink);border-bottom:none;border-radius:8px 8px 0 0;
+    padding:9px 20px 8px;cursor:pointer;color:var(--ink-soft);position:relative;top:2px;
   }
-  .setup-title{font-size:1.5rem;font-weight:900;}
-  .setup-sub{color:var(--text-secondary);font-size:.92rem;line-height:1.6;max-width:60ch;}
-  .field-block{display:flex;flex-direction:column;gap:10px;}
-  .field-label{font-size:.8rem;font-weight:700;color:var(--text-secondary);letter-spacing:.03em;}
-  .team-inputs{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-  @media(max-width:560px){.team-inputs{grid-template-columns:1fr;}}
-  .team-field{
-    display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:var(--radius-md);
-    border:1.5px solid var(--tc);background:var(--ts);
-  }
-  .team-field.a{--tc:var(--team-a);--ts:var(--team-a-soft);}
-  .team-field.b{--tc:var(--team-b);--ts:var(--team-b-soft);}
-  .team-field label{font-size:.78rem;font-weight:700;color:var(--text-secondary);}
-  input,select{
-    font:inherit;background:var(--surface-2);border:1px solid var(--border);color:var(--text-primary);
-    border-radius:var(--radius-sm);padding:10px 12px;font-size:.95rem;
-  }
-  input:focus,select:focus{border-color:var(--team-a);}
-  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-  @media(max-width:560px){.row-2{grid-template-columns:1fr;}}
-  .setup-warning{
-    display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--warn);
-    background:rgba(250,178,25,.1);border:1px solid rgba(250,178,25,.35);
-    padding:10px 14px;border-radius:var(--radius-sm);
-  }
-  .bank-status{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
-    padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);}
-  .bank-status .count{font-family:var(--font-mono);font-weight:700;font-variant-numeric:tabular-nums;}
+  nav.tabs button.active{background:var(--card);color:var(--ink);top:2px;border-bottom:2px solid var(--card);}
+  nav.tabs button .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;position:relative;top:-1px;}
+  nav.tabs button .dot.filled{background:var(--sage);}
+  nav.tabs button .dot.empty{background:transparent;border:1.5px solid #B9C2B7;}
 
-  /* ---------- editor ---------- */
-  .editor-card{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:26px;display:flex;flex-direction:column;gap:20px;}
-  .editor-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
-  .bank-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-md);max-height:420px;overflow-y:auto;}
-  table{border-collapse:collapse;width:100%;min-width:820px;}
-  thead th{position:sticky;top:0;background:var(--surface-2);z-index:1;}
-  th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;font-size:.82rem;}
-  th{color:var(--text-secondary);font-weight:700;white-space:nowrap;}
-  td input{width:100%;min-width:80px;padding:7px 8px;font-size:.85rem;}
-  td.q-col input{min-width:170px;}
-  td.del-col{text-align:center;}
-  .icon-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:4px 8px;border-radius:6px;}
-  .icon-btn:hover{color:var(--bad);background:var(--surface-3);}
-  .subhead{font-weight:800;font-size:1rem;margin-bottom:2px;}
-  .hint{color:var(--text-muted);font-size:.8rem;line-height:1.6;}
-  .paste-box{
-    width:100%;min-height:110px;font-family:var(--font-mono);font-size:.8rem;
-    background:var(--surface-2);border:1px solid var(--border);color:var(--text-primary);
-    border-radius:var(--radius-sm);padding:12px;resize:vertical;
+  nav.quiz-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+  nav.quiz-tabs button{
+    font-family:inherit;font-size:13.5px;font-weight:700;background:var(--paper);
+    border:1.5px solid var(--paper-line);border-radius:16px;padding:6px 14px;
+    cursor:pointer;color:var(--ink-soft);
   }
-  .status-line{font-size:.82rem;color:var(--good);min-height:1.2em;}
-  .status-line.err{color:var(--bad);}
-  .import-export{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
-  @media(max-width:760px){.import-export{grid-template-columns:1fr;}}
-  .sub-block{display:flex;flex-direction:column;gap:10px;padding:16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);}
+  nav.quiz-tabs button.active{background:var(--sage);border-color:var(--sage);color:#fff;}
 
-  /* ---------- game ---------- */
-  .arena{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
-  @media(max-width:480px){
-    .arena{gap:8px;}
-    .panel{padding:12px;gap:10px;min-height:360px;border-top-width:3px;}
-    .team-name{font-size:.82rem;}
-    .team-score{font-size:1.1rem;}
-    .score-unit{font-size:.6rem;}
-    .progress-row{font-size:.66rem;}
-    .timer-readout{font-size:.7rem;}
-    .question-card{font-size:.82rem;padding:10px;min-height:46px;line-height:1.45;}
-    .opt-grid{gap:6px;}
-    .opt-btn{padding:8px;font-size:.72rem;gap:6px;}
-    .opt-letter{width:18px;height:18px;font-size:.62rem;}
-  }
-  .panel{
-    background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius-lg);
-    padding:22px;display:flex;flex-direction:column;gap:16px;min-height:440px;border-top:4px solid var(--tc);
-  }
-  .panel-a{--tc:var(--team-a);}
-  .panel-b{--tc:var(--team-b);}
-  .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
-  .team-name{font-weight:800;font-size:1.05rem;color:var(--tc);}
-  .team-score{font-family:var(--font-mono);font-weight:700;font-size:1.7rem;font-variant-numeric:tabular-nums;text-align:right;}
-  .score-unit{font-size:.68rem;color:var(--text-secondary);margin-left:3px;font-family:var(--font-body);font-weight:500;}
-  .progress-row{display:flex;justify-content:space-between;color:var(--text-secondary);font-size:.82rem;}
-  .timer-readout{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:700;}
-  .timerbar{height:8px;border-radius:5px;background:var(--surface-3);overflow:hidden;}
-  .timerfill{height:100%;width:100%;background:var(--good);transition:width 1s linear,background-color .3s ease;}
-  .timerfill.warn{background:var(--warn);}
-  .timerfill.bad{background:var(--bad);}
-  .question-card{
-    background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);
-    padding:20px;font-size:1.08rem;line-height:1.6;font-weight:700;min-height:70px;
-    display:flex;align-items:center;
-  }
-  .opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;}
-  @media(max-width:420px){.opt-grid{grid-template-columns:1fr;}}
-  .opt-btn{
-    display:flex;align-items:center;gap:10px;text-align:left;padding:14px;border-radius:var(--radius-md);
-    border:1.5px solid var(--border);background:var(--surface-2);color:var(--text-primary);
-    cursor:pointer;font-size:.95rem;line-height:1.4;transition:transform .12s ease,border-color .12s ease,background .12s ease;
-    touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;
-  }
-  .opt-btn:hover:not(:disabled){border-color:var(--tc);transform:translateY(-1px);}
-  .opt-btn:disabled{cursor:default;}
-  .opt-btn.correct{border-color:var(--good);background:rgba(31,138,59,.13);}
-  .opt-btn.wrong{border-color:var(--bad);background:rgba(209,69,63,.13);}
-  .opt-btn.dim{opacity:.55;}
-  .opt-letter{
-    display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;
-    background:var(--surface-3);font-weight:800;font-size:.8rem;flex:none;
-  }
-  .done-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;color:var(--text-secondary);}
-  .done-emoji{font-size:2.6rem;}
-  .done-text{color:var(--text-primary);font-weight:800;font-size:1.15rem;}
+  .panel{background:var(--card);border:2px solid var(--ink);border-radius:0 10px 10px 10px;padding:28px;}
 
-  /* ---------- fullscreen game mode: two panels fill the whole screen, half each ---------- */
-  body.game-fullscreen{overflow:hidden;}
-  body.game-fullscreen .topbar{
-    height:52px;padding:0 16px;box-sizing:border-box;
+  .panel-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px;margin-bottom:22px;}
+  .panel-head h2{margin:0;font-size:22px;}
+  .panel-head .sub{color:var(--ink-soft);font-size:13.5px;margin-top:4px;}
+
+  .grade-stamp{
+    width:104px;height:104px;border:4px solid var(--pen-red);border-radius:50%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    transform:rotate(-6deg);color:var(--pen-red);flex-shrink:0;
   }
-  body.game-fullscreen .setup-sub{display:none;}
-  body.game-fullscreen main{
-    max-width:none;margin:0;padding:0;
-    height:calc(100vh - 52px);height:calc(100dvh - 52px);
-    box-sizing:border-box;
-    display:flex;flex-direction:column;
+  .grade-stamp .num{font-size:30px;font-weight:800;line-height:1;}
+  .grade-stamp .lbl{font-size:11px;margin-top:2px;letter-spacing:1px;}
+
+  .stat-row{display:flex;gap:14px;margin-bottom:24px;flex-wrap:wrap;}
+  .stat-box{background:var(--paper);border:1.5px solid var(--paper-line);border-radius:8px;padding:12px 18px;min-width:110px;}
+  .stat-box .v{font-size:20px;font-weight:800;}
+  .stat-box .k{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .stat-box.warn{border-color:var(--pen-red);}
+  .stat-box.warn .v,.stat-box.warn .k{color:var(--pen-red);font-weight:800;}
+
+  .chart-box{background:var(--paper);border:1.5px solid var(--paper-line);border-radius:8px;padding:18px 18px 8px;margin-bottom:24px;cursor:zoom-in;}
+  .chart-box h3{margin:0 0 12px;font-size:14px;color:var(--ink-soft);font-weight:700;}
+  .chart-box .canvas-wrap{position:relative;height:260px;}
+  .zoom-hint{font-size:11.5px;color:#9AA69A;text-align:right;margin-top:6px;}
+
+  .table-box{cursor:zoom-in;margin-bottom:24px;}
+  table{width:100%;border-collapse:collapse;font-size:17px;}
+  table caption{text-align:left;font-size:17px;color:var(--ink-soft);font-weight:700;margin-bottom:12px;}
+  th,td{padding:10px 8px;text-align:center;border-bottom:1px solid var(--paper-line);}
+  th{color:var(--ink-soft);font-weight:700;font-size:14.5px;}
+  td.score{font-weight:700;}
+
+  .empty{text-align:center;padding:60px 20px;color:var(--ink-soft);}
+  .empty .icon{
+    width:64px;height:64px;margin:0 auto 16px;border:2px dashed #B9C2B7;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;font-size:26px;transform:rotate(-3deg);
   }
-  body.game-fullscreen #view-game{
-    flex:1;min-height:0;display:flex;flex-direction:column;gap:0;
+  .empty p{margin:4px 0;font-size:14.5px;}
+  .empty .small{font-size:12.5px;color:#9AA69A;}
+
+  footer{margin-top:30px;text-align:center;color:#9AA69A;font-size:12px;}
+
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(30,43,39,0.55);
+    align-items:center;justify-content:center;padding:24px;z-index:50;
   }
-  body.game-fullscreen .arena{
-    flex:1;min-height:0;gap:0;
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:var(--card);border:2px solid var(--ink);border-radius:10px;
+    padding:28px;width:100%;max-width:760px;max-height:85vh;overflow:auto;position:relative;
   }
-  body.game-fullscreen .panel{
-    border-radius:0;border-top-width:6px;
-    justify-content:center;gap:clamp(14px,2.5vh,28px);
-    padding:clamp(20px,4vh,56px) clamp(20px,4vw,64px);
-    min-height:0;height:100%;
-  }
-  body.game-fullscreen .panel-a{border-right:1px solid var(--border);}
-  body.game-fullscreen .team-name{font-size:clamp(1.1rem,2.2vw,1.6rem);}
-  body.game-fullscreen .team-score{font-size:clamp(1.6rem,4vw,2.8rem);}
-  body.game-fullscreen .score-unit{font-size:.85rem;}
-  body.game-fullscreen .progress-row{font-size:clamp(.85rem,1.4vw,1.05rem);}
-  body.game-fullscreen .timer-readout{font-size:clamp(.9rem,1.5vw,1.2rem);}
-  body.game-fullscreen .timerbar{height:12px;}
-  body.game-fullscreen .question-card{
-    font-size:clamp(1.2rem,2.8vw,2rem);padding:clamp(20px,3vh,36px);
-    min-height:0;line-height:1.5;
-  }
-  body.game-fullscreen .opt-grid{gap:clamp(10px,1.6vw,18px);}
-  body.game-fullscreen .opt-btn{
-    font-size:clamp(1rem,1.9vw,1.35rem);padding:clamp(16px,2.6vh,28px);gap:14px;
-  }
-  body.game-fullscreen .opt-letter{
-    width:clamp(26px,3vw,36px);height:clamp(26px,3vw,36px);font-size:clamp(.85rem,1.4vw,1.05rem);
-  }
-  body.game-fullscreen .done-emoji{font-size:clamp(2.6rem,6vw,4rem);}
-  body.game-fullscreen .done-text{font-size:clamp(1.15rem,2.4vw,1.6rem);}
-  @media(max-width:760px){
-    body.game-fullscreen .panel-a{border-right:none;border-bottom:1px solid var(--border);}
+  .modal-box h3{margin:0 0 18px;font-size:19px;padding-right:30px;}
+  .modal-box .canvas-wrap-lg{position:relative;height:min(60vh,480px);}
+  .modal-box table{font-size:22px;}
+  .modal-box th,.modal-box td{padding:14px 10px;}
+  .modal-close{
+    position:absolute;top:16px;right:16px;width:32px;height:32px;
+    border:2px solid var(--ink);border-radius:50%;background:var(--paper);
+    cursor:pointer;font-size:16px;font-weight:700;line-height:1;color:var(--ink);
   }
 
-  /* ---------- results ---------- */
-  .results-card{
-    background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius-lg);
-    padding:32px;display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center;
+  @media (max-width:560px){
+    h1{font-size:26px;}
+    .panel{padding:20px;}
+    nav.tabs button{padding:8px 14px 7px;font-size:14.5px;}
+    .grade-stamp{width:84px;height:84px;}
+    .grade-stamp .num{font-size:24px;}
   }
-  .winner-banner{font-size:1.4rem;font-weight:900;}
-  .chart-wrap{width:100%;max-width:380px;height:auto;}
-  .result-stats{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;}
-  .result-stat{display:flex;flex-direction:column;gap:4px;min-width:120px;}
-  .result-stat .label{color:var(--text-secondary);font-size:.8rem;font-weight:600;}
-  .result-stat .value{font-family:var(--font-mono);font-weight:700;font-size:1.35rem;font-variant-numeric:tabular-nums;}
-
-  [hidden]{display:none!important;}
 </style>
+</head>
+<body>
+<div class="wrap">
 
-<div id="app">
-  <header class="topbar">
-    <div class="brand"><span>🏆</span><span>問答擂台</span><span class="flag a"></span><span class="flag b"></span></div>
-    <div class="topbar-actions">
-      <button id="btnEndGame" class="btn btn-ghost btn-danger" hidden>結束遊戲</button>
-    </div>
+  <header>
+    <span class="eyebrow">小考成績紀錄</span>
+    <h1>五年級成績總覽</h1>
+    <p>506 · 507 · 508 · 509 · 510　各班分數級距、平均分數統計</p>
   </header>
 
-  <main>
-    <section id="view-setup" class="view">
-      <div class="setup-card">
-        <div>
-          <div class="setup-title">分組問答擂台</div>
-          <p class="setup-sub">兩隊在同一畫面上各自作答，每題限時倒數，答對得分，時間到自動進入下一題。全部作答完畢後自動結算分數，看誰是擂台冠軍！</p>
-        </div>
+  <nav class="tabs" id="tabs"></nav>
+  <nav class="quiz-tabs" id="quizTabs"></nav>
+  <section class="panel" id="panel"></section>
 
-        <div class="field-block">
-          <div class="field-label">隊伍名稱</div>
-          <div class="team-inputs">
-            <div class="team-field a">
-              <label for="inputTeamA">左方隊伍</label>
-              <input id="inputTeamA" type="text" maxlength="12" placeholder="第一隊">
-            </div>
-            <div class="team-field b">
-              <label for="inputTeamB">右方隊伍</label>
-              <input id="inputTeamB" type="text" maxlength="12" placeholder="第二隊">
-            </div>
-          </div>
-        </div>
+  <footer>資料來源：各班小考成績登錄表</footer>
+</div>
 
-        <div class="row-2">
-          <div class="field-block">
-            <label class="field-label" for="selectSeconds">每題作答時間</label>
-            <select id="selectSeconds">
-              <option value="10">10 秒</option>
-              <option value="15">15 秒</option>
-              <option value="20" selected>20 秒</option>
-              <option value="30">30 秒</option>
-            </select>
-          </div>
-          <div class="field-block">
-            <label class="field-label" for="selectCount">本場題數</label>
-            <select id="selectCount">
-              <option value="5">5 題</option>
-              <option value="10" selected>10 題</option>
-              <option value="15">15 題</option>
-              <option value="20">20 題</option>
-              <option value="all">全部題目</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="bank-status">
-          <span>目前題庫共 <span class="count" id="bankCountLabel">0</span> 題</span>
-          <button id="btnOpenEditor" class="btn btn-ghost">📋 題庫管理</button>
-        </div>
-
-        <div id="setupWarning" class="setup-warning" hidden>
-          ⚠️ 題庫至少需要 4 題才能開始遊戲，請先到「題庫管理」新增題目。
-        </div>
-
-        <div class="btn-row">
-          <button id="btnStart" class="btn btn-primary">⚡ 開始遊戲</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="view-editor" class="view" hidden>
-      <div class="editor-card">
-        <div class="editor-head">
-          <div>
-            <div class="subhead">題庫管理</div>
-            <div class="hint">直接編輯下方表格，或用貼上功能從 Excel 快速匯入整批題目。</div>
-          </div>
-          <button id="btnBackFromEditor" class="btn btn-ghost">← 返回設定</button>
-        </div>
-
-        <div class="bank-table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:26px;">#</th>
-                <th style="min-width:180px;">題目</th>
-                <th>選項 A</th><th>選項 B</th><th>選項 C</th><th>選項 D</th>
-                <th style="width:70px;">正解</th>
-                <th style="width:36px;"></th>
-              </tr>
-            </thead>
-            <tbody id="bankTableBody"></tbody>
-          </table>
-        </div>
-
-        <div class="btn-row">
-          <button id="btnAddRow" class="btn btn-ghost">＋ 新增一題</button>
-          <button id="btnRestoreDefault" class="btn btn-ghost">↺ 還原範例題庫</button>
-        </div>
-
-        <div class="import-export">
-          <div class="sub-block">
-            <div class="subhead" style="font-size:.9rem;">從 Excel 貼上匯入</div>
-            <div class="hint">在 Excel 依序排好「題目、選項A、選項B、選項C、選項D、正解」六個欄位，整塊複製後貼到下面，每列一題。正解可填 1-4 或 A-D。</div>
-            <textarea id="importArea" class="paste-box" placeholder="題目	選項A	選項B	選項C	選項D	正解&#10;例：台灣最高的山是？	玉山	雪山	合歡山	阿里山	1"></textarea>
-            <div class="btn-row">
-              <button id="btnImportAppend" class="btn btn-ghost">新增到題庫</button>
-              <button id="btnImportReplace" class="btn btn-ghost btn-danger">取代整個題庫</button>
-            </div>
-            <div id="importStatus" class="status-line"></div>
-          </div>
-          <div class="sub-block">
-            <div class="subhead" style="font-size:.9rem;">複製題庫到 Excel</div>
-            <div class="hint">按下按鈕後會嘗試自動複製，也可以直接在下方文字框全選複製，貼回 Excel 即可備份或編輯。</div>
-            <button id="btnExport" class="btn btn-ghost">📤 產生匯出文字</button>
-            <textarea id="exportArea" class="paste-box" readonly placeholder="按下上方按鈕產生內容…"></textarea>
-            <div id="exportStatus" class="status-line"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="view-game" class="view" hidden>
-      <div class="arena">
-        <div class="panel panel-a" id="panelA"></div>
-        <div class="panel panel-b" id="panelB"></div>
-      </div>
-    </section>
-
-    <section id="view-results" class="view" hidden>
-      <div id="resultsContent"></div>
-    </section>
-  </main>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose" aria-label="關閉">✕</button>
+    <h3 id="modalTitle"></h3>
+    <div id="modalBody"></div>
+  </div>
 </div>
 
 <script>
-(function(){
-  "use strict";
-  const $ = (sel, root) => (root||document).querySelector(sel);
-  const $$ = (sel, root) => Array.from((root||document).querySelectorAll(sel));
-  const LS_BANK = 'qaArena.bank.v1';
-  const LS_SETTINGS = 'qaArena.settings.v1';
+// distribution arrays are ordered low → high (70以下 first, 100 last) —
+// the chart reads them left-to-right in this order; the table shows
+// high-to-low (reversed) for readability.
+const QUIZZES = ["1-1","1-2","1-3","1-3-bonus","1-3-total","2-1","2-2"];
 
-  function escapeHTML(str){
-    return String(str==null?'':str).replace(/[&<>"']/g, c => ({
-      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    }[c]));
-  }
-  function genId(){
-    return 'q_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
-  }
-  function shuffle(arr){
-    const a = arr.slice();
-    for(let i=a.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [a[i],a[j]]=[a[j],a[i]];
-    }
-    return a;
-  }
+// Display wording per tab. Plain quizzes (1-1, 1-2, 1-3, ...) use the defaults;
+// 加分 and 總分 have their own buckets, so they carry their own wording and
+// the label of the "top" bucket that the 滿分 stat counts.
+// 基本資料不完整：試算表儲存格標 z 的人數（成績照常計入級距與平均）
+const INC = { key:"incomplete", label:"基本資料不完整", warn:true };
+const QUIZ_META = {
+  "1-3": { tab:"1-3 小考", title:"1-3 小考", dist:"分數級距", top:"100", avg:"平均分數", stamp:"班平均",
+           topLabel:"滿分人數", extras:[INC], countLabel:"實際應試人數", sub:n=>`已收 ${n} 份` },
+  "1-3-bonus": { tab:"1-3 加分", title:"1-3 加分", dist:"加分級距", top:"10",
+                 avg:"平均加分", stamp:"平均加分", topLabel:"加滿 10 分人數",
+                 extras:[{ key:"blank", label:"交白卷", warn:true }, INC],   // 交白卷：加分欄標記 x，視為 0 分計入級距與平均；'-' 為缺考，不列入
+                 countLabel:"統計人數", sub:n=>`統計 ${n} 人` },
+  "1-3-total": { tab:"1-3 總分", title:"1-3 總分", dist:"總分級距", top:"110",
+                 avg:"平均分數", stamp:"班平均", topLabel:"110 分人數",
+                 extras:[INC],
+                 countLabel:"統計人數", sub:n=>`統計 ${n} 人` }
+};
+function quizMeta(q){
+  return QUIZ_META[q] || { tab:`${q} 小考`, title:`${q} 小考`, dist:"分數級距", top:"100",
+                           avg:"平均分數", stamp:"班平均", topLabel:"滿分人數",
+                           countLabel:"實際應試人數", sub:n=>`已收 ${n} 份` };
+}
 
-  function defaultBank(){
-    const rows = [
-      ['「守株待兔」這句成語的意思是？',['形容做事非常勤勞','比喻不知變通、心存僥倖','形容非常害怕','比喻互相幫助合作'],1],
-      ['台灣最高的山是？',['玉山','雪山','合歡山','阿里山'],0],
-      ['3/4 + 1/8 等於多少？',['7/8','5/8','1','3/8'],0],
-      ['「一日之計在於晨」是什麼意思？',['一天的計畫要在早上安排好','每天都要記帳','要早睡早起才健康','早餐要吃得豐盛'],0],
-      ['世界上面積最大的海洋是？',['大西洋','太平洋','印度洋','北極海'],1],
-      ['6 × 7 等於多少？',['42','36','48','49'],0],
-      ['「入境隨俗」的意思是？',['到別人家要送禮物','到新地方要遵守當地習俗','出國一定要學外語','要尊敬長輩'],1],
-      ['人體最大的器官是？',['心臟','肝臟','皮膚','大腦'],2],
-      ['下列何者不是 12 的因數？',['3','4','5','6'],2],
-      ['「畫蛇添足」用來比喻？',['做了多餘的事，反而壞事','畫畫的技巧很好','做事非常小心謹慎','互相合作完成任務'],0]
-    ];
-    return rows.map(r => ({id: genId(), q:r[0], options:r[1].slice(), correct:r[2]}));
-  }
+const RAW = {
+  "506": { "1-1": { average: 76.33, distribution: [
+    { label:"70以下", count:6 },{ label:"70-79", count:5 },{ label:"80-89", count:9 },
+    { label:"90-99", count:4 },{ label:"100", count:0 }
+  ]},
+  "1-2": { average: 83.58, distribution: [
+    { label:"70以下", count:3 },{ label:"70-79", count:3 },{ label:"80-89", count:7 },
+    { label:"90-99", count:10 },{ label:"100", count:1 }
+  ]},
+  "1-3": { average: 90.38, incomplete: 1, distribution: [
+    { label:"70以下", count:2 }, { label:"70-79", count:0 }, { label:"80-89", count:4 }, { label:"90-99", count:14 }, { label:"100", count:4 }
+  ]},
+  "1-3-bonus": { average: 5.71, blank: 1, incomplete: 1, distribution: [
+    { label:"7以下", count:15 }, { label:"8", count:3 }, { label:"9", count:0 }, { label:"10", count:6 }
+  ]},
+  "1-3-total": { average: 96.08, incomplete: 1, distribution: [
+    { label:"80以下", count:2 }, { label:"80-89", count:0 }, { label:"90-99", count:9 }, { label:"100-109", count:10 }, { label:"110", count:3 }
+  ]} },
+  "507": { "1-1": { average: 77.84, distribution: [
+    { label:"70以下", count:8 },{ label:"70-79", count:3 },{ label:"80-89", count:6 },
+    { label:"90-99", count:8 },{ label:"100", count:0 }
+  ]},
+  "1-2": { average: 84.72, distribution: [
+    { label:"70以下", count:2 },{ label:"70-79", count:5 },{ label:"80-89", count:8 },
+    { label:"90-99", count:7 },{ label:"100", count:3 }
+  ]},
+  "1-3": { average: 92.33, incomplete: 3, distribution: [
+    { label:"70以下", count:1 }, { label:"70-79", count:1 }, { label:"80-89", count:2 }, { label:"90-99", count:10 }, { label:"100", count:10 }
+  ]},
+  "1-3-bonus": { average: 7.17, blank: 2, incomplete: 3, distribution: [
+    { label:"7以下", count:9 }, { label:"8", count:4 }, { label:"9", count:2 }, { label:"10", count:9 }
+  ]},
+  "1-3-total": { average: 99.5, incomplete: 3, distribution: [
+    { label:"80以下", count:1 }, { label:"80-89", count:1 }, { label:"90-99", count:6 }, { label:"100-109", count:12 }, { label:"110", count:4 }
+  ]} },
+  "508": { "1-1": { average: 84.24, distribution: [
+    { label:"70以下", count:2 },{ label:"70-79", count:5 },{ label:"80-89", count:7 },
+    { label:"90-99", count:9 },{ label:"100", count:2 }
+  ]},
+  "1-2": { average: 87.04, distribution: [
+    { label:"70以下", count:2 },{ label:"70-79", count:4 },{ label:"80-89", count:6 },
+    { label:"90-99", count:11 },{ label:"100", count:2 }
+  ]},
+  "1-3": { average: 96.0, distribution: [
+    { label:"70以下", count:0 }, { label:"70-79", count:0 }, { label:"80-89", count:2 }, { label:"90-99", count:14 }, { label:"100", count:9 }
+  ]},
+  "1-3-bonus": { average: 7.76, blank: 0, distribution: [
+    { label:"7以下", count:6 }, { label:"8", count:7 }, { label:"9", count:1 }, { label:"10", count:11 }
+  ]},
+  "1-3-total": { average: 103.76, distribution: [
+    { label:"80以下", count:0 }, { label:"80-89", count:0 }, { label:"90-99", count:5 }, { label:"100-109", count:16 }, { label:"110", count:4 }
+  ]} },
+  "509": { "1-1": { average: 80.88, distribution: [
+    { label:"70以下", count:7 },{ label:"70-79", count:3 },{ label:"80-89", count:6 },
+    { label:"90-99", count:7 },{ label:"100", count:2 }
+  ]},
+  "1-2": { average: 86.4, distribution: [
+    { label:"70以下", count:2 },{ label:"70-79", count:2 },{ label:"80-89", count:9 },
+    { label:"90-99", count:8 },{ label:"100", count:4 }
+  ]},
+  "1-3": { average: 94.88, distribution: [
+    { label:"70以下", count:0 }, { label:"70-79", count:0 }, { label:"80-89", count:6 }, { label:"90-99", count:12 }, { label:"100", count:7 }
+  ]},
+  "1-3-bonus": { average: 6.08, blank: 0, distribution: [
+    { label:"7以下", count:16 }, { label:"8", count:3 }, { label:"9", count:1 }, { label:"10", count:5 }
+  ]},
+  "1-3-total": { average: 100.96, distribution: [
+    { label:"80以下", count:0 }, { label:"80-89", count:3 }, { label:"90-99", count:6 }, { label:"100-109", count:14 }, { label:"110", count:2 }
+  ]} },
+  "510": { "1-1": { average: 76.37, distribution: [
+    { label:"70以下", count:7 },{ label:"70-79", count:7 },{ label:"80-89", count:7 },
+    { label:"90-99", count:5 },{ label:"100", count:1 }
+  ]},
+  "1-2": { average: 83.85, distribution: [
+    { label:"70以下", count:3 },{ label:"70-79", count:5 },{ label:"80-89", count:8 },
+    { label:"90-99", count:10 },{ label:"100", count:1 }
+  ]},
+  "1-3": { average: 93.16, distribution: [
+    { label:"70以下", count:1 }, { label:"70-79", count:0 }, { label:"80-89", count:4 }, { label:"90-99", count:13 }, { label:"100", count:7 }
+  ]},
+  "1-3-bonus": { average: 6.4, blank: 2, distribution: [
+    { label:"7以下", count:12 }, { label:"8", count:9 }, { label:"9", count:2 }, { label:"10", count:2 }
+  ]},
+  "1-3-total": { average: 99.56, distribution: [
+    { label:"80以下", count:1 }, { label:"80-89", count:2 }, { label:"90-99", count:5 }, { label:"100-109", count:16 }, { label:"110", count:1 }
+  ]} }
+};
 
-  function loadBank(){
-    try{
-      const raw = localStorage.getItem(LS_BANK);
-      if(raw){
-        const parsed = JSON.parse(raw);
-        if(Array.isArray(parsed) && parsed.length) return parsed;
+const classes = Object.keys(RAW);
+let current = null; // no class selected when the page opens
+let currentQuiz = "1-1";
+let chartInstance = null;
+let modalChart = null;
+
+function classHasAnyData(c){
+  return QUIZZES.some(q => RAW[c][q]);
+}
+
+function renderTabs(){
+  const tabsEl = document.getElementById("tabs");
+  tabsEl.innerHTML = classes.map(c => {
+    const ready = classHasAnyData(c);
+    return `<button data-c="${c}" class="${c===current?'active':''}">
+      <span class="dot ${ready?'filled':'empty'}"></span>${c} 班
+    </button>`;
+  }).join("");
+  tabsEl.querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      current = b.dataset.c;
+      if (!RAW[current][currentQuiz]) {
+        const firstReady = QUIZZES.find(q => RAW[current][q]);
+        currentQuiz = firstReady || "1-1";
       }
-    }catch(e){}
-    const def = defaultBank();
-    saveBank(def);
-    return def;
-  }
-  function saveBank(b){
-    try{ localStorage.setItem(LS_BANK, JSON.stringify(b)); }catch(e){}
-  }
-  function loadSettings(){
-    const def = {teamA:'第一隊', teamB:'第二隊', seconds:'20', count:'10'};
-    try{
-      const raw = localStorage.getItem(LS_SETTINGS);
-      if(raw) return Object.assign(def, JSON.parse(raw));
-    }catch(e){}
-    return def;
-  }
-  function saveSettings(s){
-    try{ localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); }catch(e){}
-  }
-
-  let bank = loadBank();
-  let settings = loadSettings();
-  let game = null;
-
-  // ---------- view switching ----------
-  function showView(name){
-    ['setup','editor','game','results'].forEach(v=>{
-      document.getElementById('view-'+v).hidden = (v!==name);
+      renderTabs(); renderQuizTabs(); renderPanel();
     });
-    document.getElementById('btnEndGame').hidden = (name!=='game');
-    document.body.classList.toggle('game-fullscreen', name === 'game');
-  }
-
-  function updateBankCountLabel(){
-    $('#bankCountLabel').textContent = bank.length;
-    refreshStartButtonState();
-  }
-  function refreshStartButtonState(){
-    const warn = $('#setupWarning');
-    const btn = $('#btnStart');
-    if(bank.length < 4){
-      warn.hidden = false;
-      btn.disabled = true;
-    } else {
-      warn.hidden = true;
-      btn.disabled = false;
-    }
-  }
-
-  // ---------- setup ----------
-  function initSetupInputs(){
-    $('#inputTeamA').value = settings.teamA;
-    $('#inputTeamB').value = settings.teamB;
-    $('#selectSeconds').value = settings.seconds;
-    $('#selectCount').value = settings.count;
-    updateBankCountLabel();
-  }
-
-  $('#btnOpenEditor').addEventListener('click', ()=>{
-    renderEditorTable();
-    showView('editor');
   });
-  $('#btnBackFromEditor').addEventListener('click', ()=>{
-    updateBankCountLabel();
-    showView('setup');
+}
+
+function renderQuizTabs(){
+  const el = document.getElementById("quizTabs");
+  if (!current){ el.innerHTML = ""; return; }
+  el.innerHTML = QUIZZES.map(q => {
+    const ready = !!RAW[current][q];
+    return `<button data-q="${q}" class="${q===currentQuiz?'active':''}">${quizMeta(q).tab}${ready?'':'（尚無）'}</button>`;
+  }).join("");
+  el.querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click", ()=>{ currentQuiz = b.dataset.q; renderQuizTabs(); renderPanel(); });
   });
+}
 
-  $('#btnStart').addEventListener('click', startGame);
-
-  function readSettingsFromForm(){
-    return {
-      teamA: ($('#inputTeamA').value.trim() || '第一隊'),
-      teamB: ($('#inputTeamB').value.trim() || '第二隊'),
-      seconds: $('#selectSeconds').value,
-      count: $('#selectCount').value
-    };
-  }
-
-  function startGame(){
-    if(bank.length < 4) return;
-    settings = readSettingsFromForm();
-    saveSettings(settings);
-
-    const secs = parseInt(settings.seconds,10) || 20;
-
-    // split the bank into two disjoint halves so the two teams get
-    // genuinely different questions, not just a different order of the same ones
-    const shuffledBank = shuffle(bank);
-    const half = Math.floor(shuffledBank.length / 2);
-    const poolA = shuffledBank.slice(0, half);
-    const poolB = shuffledBank.slice(half, half * 2);
-
-    const desired = settings.count === 'all' ? Infinity : (parseInt(settings.count,10) || 10);
-    const nA = Math.min(desired, poolA.length);
-    const nB = Math.min(desired, poolB.length);
-    const toGameQ = q => ({q:q.q, options:q.options.slice(), correct:q.correct});
-    const selectedA = poolA.slice(0, nA).map(toGameQ);
-    const selectedB = poolB.slice(0, nB).map(toGameQ);
-
-    game = {
-      seconds: secs,
-      teams: {
-        // disjoint question sets, so team A and team B never see the same question
-        A: newTeamState(settings.teamA, selectedA),
-        B: newTeamState(settings.teamB, selectedB)
+function chartConfig(distribution){
+  return {
+    type: "bar",
+    data: {
+      labels: distribution.map(x=>x.label),
+      datasets: [{
+        data: distribution.map(x=>x.count),
+        backgroundColor: "#5C8A78",
+        borderRadius: 4,
+        maxBarThickness: 46
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero:true, ticks:{ stepSize:1, color:"#4B5A54" }, grid:{ color:"#D3DCD2" } },
+        x: { ticks:{ color:"#4B5A54" }, grid:{ display:false } }
       }
-    };
-
-    showView('game');
-    ['A','B'].forEach(t => { renderPanel(t); startTimer(t); });
-  }
-
-  function newTeamState(name, questions){
-    return {name:name, questions:questions, idx:0, score:0, correctCount:0, done:false, order:null, timeLeft:0, timerId:null, locked:false};
-  }
-
-  function currentQuestion(team){
-    const t = game.teams[team];
-    return t.questions[t.idx];
-  }
-
-  // ---------- game panel rendering ----------
-  function renderPanel(team){
-    const t = game.teams[team];
-    const panel = $('#panel'+team);
-    const total = t.questions.length;
-    if(t.idx >= total){
-      t.done = true;
-      panel.innerHTML = doneTemplate(t, total);
-      checkBothDone();
-      return;
     }
-    if(!t.order) t.order = shuffle([0,1,2,3]);
-    t.locked = false;
-    const q = currentQuestion(team);
-    panel.innerHTML = questionTemplate(team, t, q, total);
-    // pointerdown (not click) so two people tapping their own side's button
-    // at the same instant on a shared touchscreen both register reliably —
-    // browsers can drop/merge synthetic click events on simultaneous multi-touch.
-    $$('.opt-btn', panel).forEach(btn=>{
-      btn.addEventListener('pointerdown', ()=> handleAnswer(team, parseInt(btn.dataset.idx,10)));
-    });
+  };
+}
+
+function tableHtml(distribution){
+  return `
+    <table>
+      <caption>${current} 班｜${quizMeta(currentQuiz).title}｜${quizMeta(currentQuiz).dist}統計</caption>
+      <thead><tr><th>級距</th><th>人數</th></tr></thead>
+      <tbody>
+        ${[...distribution].reverse().map(x => `
+          <tr><td>${x.label}</td><td class="score">${x.count}</td></tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderPanel(){
+  const panelEl = document.getElementById("panel");
+
+  if (chartInstance){ chartInstance.destroy(); chartInstance = null; }
+
+  if (!current){
+    panelEl.innerHTML = `
+      <div class="empty">
+        <div class="icon">?</div>
+        <p>請先選擇班級。</p>
+        <p class="small">點選上方的班級，就會顯示該班的小考成績。</p>
+      </div>
+    `;
+    return;
   }
 
-  function questionTemplate(team, t, q, total){
-    const letters = ['A','B','C','D'];
-    const opts = t.order.map((origIdx, dispIdx) => (
-      '<button class="opt-btn" data-idx="'+dispIdx+'">'+
-      '<span class="opt-letter">'+letters[dispIdx]+'</span>'+
-      '<span class="opt-text">'+escapeHTML(q.options[origIdx])+'</span>'+
-      '</button>'
-    )).join('');
-    return (
-      '<div class="panel-head">'+
-        '<div class="team-name">'+escapeHTML(t.name)+'</div>'+
-        '<div class="team-score">'+t.score+'<span class="score-unit">分</span></div>'+
-      '</div>'+
-      '<div class="progress-row"><span>第 '+(t.idx+1)+' / '+total+' 題</span><span class="timer-readout" id="timer'+team+'">'+game.seconds+'s</span></div>'+
-      '<div class="timerbar"><div class="timerfill" id="timerfill'+team+'" style="width:100%"></div></div>'+
-      '<div class="question-card">'+escapeHTML(q.q)+'</div>'+
-      '<div class="opt-grid">'+opts+'</div>'
-    );
+  const d = RAW[current][currentQuiz];
+
+  if (!d){
+    panelEl.innerHTML = `
+      <div class="panel-head"><div><h2>${current} 班</h2><div class="sub">${quizMeta(currentQuiz).title}｜尚未登錄成績</div></div></div>
+      <div class="empty">
+        <div class="icon">?</div>
+        <p>這次小考還沒有成績資料。</p>
+        <p class="small">登錄後，這裡會自動出現分數級距、平均分數與統計圖表。</p>
+      </div>
+    `;
+    return;
   }
 
-  function doneTemplate(t, total){
-    return (
-      '<div class="panel-head">'+
-        '<div class="team-name">'+escapeHTML(t.name)+'</div>'+
-        '<div class="team-score">'+t.score+'<span class="score-unit">分</span></div>'+
-      '</div>'+
-      '<div class="done-state">'+
-        '<div class="done-emoji">🎉</div>'+
-        '<div class="done-text">已完成全部題目！</div>'+
-        '<div>答對 '+t.correctCount+' / '+total+' 題</div>'+
-      '</div>'
-    );
-  }
+  const submittedCount = d.distribution.reduce((sum, x) => sum + x.count, 0);
+  const m = quizMeta(currentQuiz);
+  const topCount = d.distribution.find(x => x.label === m.top)?.count ?? 0;
+  // 交白卷／基本資料不完整：為 0 時不顯示，大於 0 時紅字凸顯
+  const extraBox = (m.extras || []).filter(x => (d[x.key] ?? 0) > 0).map(x =>
+    `<div class="stat-box warn"><div class="v">${d[x.key]}</div><div class="k">${x.label}</div></div>`).join("");
+  const avgDisplay = d.average.toFixed(1);
 
-  // ---------- timer ----------
-  function startTimer(team){
-    const t = game.teams[team];
-    if(t.done) return;
-    clearInterval(t.timerId);
-    t.timeLeft = game.seconds;
-    updateTimerUI(team);
-    t.timerId = setInterval(()=>{
-      t.timeLeft -= 1;
-      if(t.timeLeft <= 0){
-        clearInterval(t.timerId);
-        t.timeLeft = 0;
-        updateTimerUI(team);
-        handleTimeUp(team);
-      } else {
-        updateTimerUI(team);
-      }
-    }, 1000);
-  }
+  panelEl.innerHTML = `
+    <div class="panel-head">
+      <div>
+        <h2>${current} 班</h2>
+        <div class="sub">${m.title} · ${m.sub(submittedCount)}</div>
+      </div>
+      <div class="grade-stamp">
+        <div class="num">${avgDisplay}</div>
+        <div class="lbl">${m.stamp}</div>
+      </div>
+    </div>
 
-  function updateTimerUI(team){
-    const t = game.teams[team];
-    const readout = document.getElementById('timer'+team);
-    const fill = document.getElementById('timerfill'+team);
-    if(!readout || !fill) return;
-    readout.textContent = Math.max(t.timeLeft,0) + 's';
-    const pct = Math.max(t.timeLeft,0) / game.seconds * 100;
-    fill.style.width = pct + '%';
-    fill.classList.remove('warn','bad');
-    if(pct <= 20) fill.classList.add('bad');
-    else if(pct <= 50) fill.classList.add('warn');
-  }
+    <div class="stat-row">
+      <div class="stat-box"><div class="v">${avgDisplay}</div><div class="k">${m.avg}</div></div>
+      <div class="stat-box"><div class="v">${topCount}</div><div class="k">${m.topLabel}</div></div>
+      ${extraBox}
+      <div class="stat-box"><div class="v">${submittedCount}</div><div class="k">${m.countLabel}</div></div>
+    </div>
 
-  // ---------- answering ----------
-  function handleAnswer(team, dispIdx){
-    const t = game.teams[team];
-    if(t.locked || t.done) return;
-    t.locked = true;
-    clearInterval(t.timerId);
-    const q = currentQuestion(team);
-    const origIdx = t.order[dispIdx];
-    const correctDisp = t.order.indexOf(q.correct);
-    const isCorrect = (origIdx === q.correct);
-    if(isCorrect){ t.score += 10; t.correctCount += 1; }
-    const panel = $('#panel'+team);
-    $$('.opt-btn', panel).forEach((btn,i)=>{
-      btn.disabled = true;
-      if(i === correctDisp) btn.classList.add('correct');
-      else if(i === dispIdx) btn.classList.add('wrong');
-      else btn.classList.add('dim');
-    });
-    const scoreEl = $('.team-score', panel);
-    if(scoreEl) scoreEl.innerHTML = t.score + '<span class="score-unit">分</span>';
-    setTimeout(()=> advance(team), 1100);
-  }
+    <div class="table-box" id="tableWrap">
+      ${tableHtml(d.distribution)}
+      <div class="zoom-hint">點擊表格放大檢視</div>
+    </div>
 
-  function handleTimeUp(team){
-    const t = game.teams[team];
-    if(t.locked || t.done) return;
-    t.locked = true;
-    const q = currentQuestion(team);
-    const correctDisp = t.order.indexOf(q.correct);
-    const panel = $('#panel'+team);
-    $$('.opt-btn', panel).forEach((btn,i)=>{
-      btn.disabled = true;
-      if(i === correctDisp) btn.classList.add('correct');
-      else btn.classList.add('dim');
-    });
-    setTimeout(()=> advance(team), 1300);
-  }
+    <div class="chart-box" id="chartWrap">
+      <h3>${m.title}｜${m.dist}人數分布</h3>
+      <div class="canvas-wrap"><canvas id="distChart"></canvas></div>
+      <div class="zoom-hint">點擊圖表放大檢視</div>
+    </div>
+  `;
 
-  function advance(team){
-    const t = game.teams[team];
-    t.idx += 1;
-    t.order = null;
-    renderPanel(team);
-    if(!t.done) startTimer(team);
-  }
+  const ctx = document.getElementById("distChart").getContext("2d");
+  chartInstance = new Chart(ctx, chartConfig(d.distribution));
 
-  function checkBothDone(){
-    if(game.teams.A.done && game.teams.B.done){
-      setTimeout(endGame, 900);
-    }
-  }
+  document.getElementById("chartWrap").addEventListener("click", () => openModalChart(d.distribution));
+  document.getElementById("tableWrap").addEventListener("click", () => openModalTable(d.distribution));
+}
 
-  $('#btnEndGame').addEventListener('click', ()=>{
-    if(!game) return;
-    const ok = window.confirm('確定要提前結束遊戲並查看結果嗎？');
-    if(ok) endGame();
-  });
+function openModalBase(title){
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalOverlay").classList.add("open");
+  if (modalChart){ modalChart.destroy(); modalChart = null; }
+}
 
-  function endGame(){
-    if(!game) return;
-    clearInterval(game.teams.A.timerId);
-    clearInterval(game.teams.B.timerId);
-    showResults();
-  }
+function openModalChart(distribution){
+  openModalBase(`${current} 班｜${quizMeta(currentQuiz).title}｜${quizMeta(currentQuiz).dist}人數分布`);
+  document.getElementById("modalBody").innerHTML = `<div class="canvas-wrap-lg"><canvas id="distChartLg"></canvas></div>`;
+  const ctxLg = document.getElementById("distChartLg").getContext("2d");
+  modalChart = new Chart(ctxLg, chartConfig(distribution));
+}
 
-  // ---------- results ----------
-  function showResults(){
-    const A = game.teams.A, B = game.teams.B;
-    const totalA = A.questions.length, totalB = B.questions.length;
-    const maxScore = Math.max(A.score, B.score, 10);
-    const chartH = 160, barW = 90, gap = 46;
-    const hA = Math.round((A.score/maxScore) * chartH);
-    const hB = Math.round((B.score/maxScore) * chartH);
-    const baseY = chartH + 20;
-    const xA = 40, xB = xA + barW + gap;
-    const viewW = xB + barW + 40;
-    const viewH = chartH + 60;
+function openModalTable(distribution){
+  openModalBase(`${current} 班｜${quizMeta(currentQuiz).title}｜${quizMeta(currentQuiz).dist}統計`);
+  document.getElementById("modalBody").innerHTML = tableHtml(distribution).replace(/<caption>.*?<\/caption>/, "");
+}
 
-    const svg = (
-      '<svg class="chart-wrap" viewBox="0 0 '+viewW+' '+viewH+'" role="img" aria-label="兩隊分數比較圖">'+
-        '<line x1="20" y1="'+baseY+'" x2="'+(viewW-20)+'" y2="'+baseY+'" stroke="var(--border)" stroke-width="1.5"/>'+
-        '<rect x="'+xA+'" y="'+(baseY-hA)+'" width="'+barW+'" height="'+Math.max(hA,2)+'" rx="8" fill="var(--team-a)"/>'+
-        '<text x="'+(xA+barW/2)+'" y="'+(baseY-hA-14)+'" text-anchor="middle" fill="var(--text-primary)" font-weight="700" font-size="22" font-family="JetBrains Mono, monospace">'+A.score+'</text>'+
-        '<text x="'+(xA+barW/2)+'" y="'+(baseY+24)+'" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-family="Noto Sans TC, sans-serif">'+escapeHTML(A.name)+'</text>'+
-        '<rect x="'+xB+'" y="'+(baseY-hB)+'" width="'+barW+'" height="'+Math.max(hB,2)+'" rx="8" fill="var(--team-b)"/>'+
-        '<text x="'+(xB+barW/2)+'" y="'+(baseY-hB-14)+'" text-anchor="middle" fill="var(--text-primary)" font-weight="700" font-size="22" font-family="JetBrains Mono, monospace">'+B.score+'</text>'+
-        '<text x="'+(xB+barW/2)+'" y="'+(baseY+24)+'" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-family="Noto Sans TC, sans-serif">'+escapeHTML(B.name)+'</text>'+
-      '</svg>'
-    );
+function closeModal(){
+  document.getElementById("modalOverlay").classList.remove("open");
+  if (modalChart){ modalChart.destroy(); modalChart = null; }
+}
 
-    let banner;
-    if(A.score === B.score){
-      banner = '🤝 平手！雙方勢均力敵';
-    } else {
-      const winner = A.score > B.score ? A : B;
-      banner = '🏆 '+escapeHTML(winner.name)+' 獲勝！';
-    }
+document.getElementById("modalClose").addEventListener("click", closeModal);
+document.getElementById("modalOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "modalOverlay") closeModal();
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
-    const html = (
-      '<div class="results-card">'+
-        '<div class="winner-banner">'+banner+'</div>'+
-        svg+
-        '<div class="result-stats">'+
-          '<div class="result-stat"><span class="label">'+escapeHTML(A.name)+' 正確率</span><span class="value">'+A.correctCount+' / '+totalA+'</span></div>'+
-          '<div class="result-stat"><span class="label">'+escapeHTML(B.name)+' 正確率</span><span class="value">'+B.correctCount+' / '+totalB+'</span></div>'+
-        '</div>'+
-        '<div class="btn-row center">'+
-          '<button id="btnReplay" class="btn btn-primary">🔁 再玩一次（同樣設定）</button>'+
-          '<button id="btnBackSetup" class="btn btn-ghost">⚙️ 回到設定</button>'+
-        '</div>'+
-      '</div>'
-    );
-    $('#resultsContent').innerHTML = html;
-    $('#btnReplay').addEventListener('click', startGame);
-    $('#btnBackSetup').addEventListener('click', ()=>{ initSetupInputs(); showView('setup'); });
-    showView('results');
-  }
-
-  // ---------- editor ----------
-  function renderEditorTable(){
-    const tbody = $('#bankTableBody');
-    tbody.innerHTML = bank.map((q, i) => rowTemplate(q, i)).join('');
-    $$('.f-q', tbody).forEach(el => el.addEventListener('input', onCellEdit));
-    $$('.f-opt', tbody).forEach(el => el.addEventListener('input', onCellEdit));
-    $$('.f-correct', tbody).forEach(el => el.addEventListener('change', onCellEdit));
-    $$('.row-del', tbody).forEach(el => el.addEventListener('click', onRowDelete));
-    updateBankCountLabel();
-  }
-
-  function rowTemplate(q, i){
-    const opts = q.options.map((opt, oi) => (
-      '<td><input class="f-opt" data-id="'+q.id+'" data-oi="'+oi+'" type="text" value="'+escapeHTML(opt)+'"></td>'
-    )).join('');
-    const correctSelect = (
-      '<select class="f-correct" data-id="'+q.id+'">'+
-        [0,1,2,3].map(ci => '<option value="'+ci+'"'+(q.correct===ci?' selected':'')+'>'+String.fromCharCode(65+ci)+'</option>').join('')+
-      '</select>'
-    );
-    return (
-      '<tr>'+
-        '<td>'+(i+1)+'</td>'+
-        '<td class="q-col"><input class="f-q" data-id="'+q.id+'" type="text" value="'+escapeHTML(q.q)+'"></td>'+
-        opts+
-        '<td>'+correctSelect+'</td>'+
-        '<td class="del-col"><button class="icon-btn row-del" data-id="'+q.id+'" title="刪除">✕</button></td>'+
-      '</tr>'
-    );
-  }
-
-  function findQ(id){ return bank.find(x => x.id === id); }
-
-  function onCellEdit(e){
-    const el = e.target;
-    const id = el.dataset.id;
-    const q = findQ(id);
-    if(!q) return;
-    if(el.classList.contains('f-q')) q.q = el.value;
-    else if(el.classList.contains('f-opt')) q.options[parseInt(el.dataset.oi,10)] = el.value;
-    else if(el.classList.contains('f-correct')) q.correct = parseInt(el.value,10);
-    saveBank(bank);
-  }
-
-  function onRowDelete(e){
-    const id = e.target.dataset.id;
-    bank = bank.filter(x => x.id !== id);
-    saveBank(bank);
-    renderEditorTable();
-  }
-
-  $('#btnAddRow').addEventListener('click', ()=>{
-    bank.push({id: genId(), q:'', options:['','','',''], correct:0});
-    saveBank(bank);
-    renderEditorTable();
-  });
-
-  $('#btnRestoreDefault').addEventListener('click', ()=>{
-    const ok = window.confirm('這會把整個題庫換成範例題目，目前的題目將會遺失，確定要繼續嗎？');
-    if(!ok) return;
-    bank = defaultBank();
-    saveBank(bank);
-    renderEditorTable();
-  });
-
-  // ---------- import ----------
-  function parseImportText(text){
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    const rows = [];
-    let skipped = 0;
-    lines.forEach(line => {
-      const cols = line.indexOf('\t') >= 0 ? line.split('\t') : line.split(',');
-      if(cols.length < 6){ skipped++; return; }
-      const q = cols[0].trim();
-      const opts = [cols[1],cols[2],cols[3],cols[4]].map(s => (s||'').trim());
-      let raw = (cols[5]||'').trim().toUpperCase();
-      let correct = 0;
-      if(/^[1-4]$/.test(raw)) correct = parseInt(raw,10) - 1;
-      else if(/^[A-D]$/.test(raw)) correct = raw.charCodeAt(0) - 65;
-      else { skipped++; return; }
-      if(!q || opts.some(o => !o)){ skipped++; return; }
-      rows.push({id: genId(), q:q, options:opts, correct:correct});
-    });
-    return {rows, skipped};
-  }
-
-  $('#btnImportAppend').addEventListener('click', ()=>{
-    const {rows, skipped} = parseImportText($('#importArea').value);
-    const status = $('#importStatus');
-    if(rows.length === 0){
-      status.className = 'status-line err';
-      status.textContent = '沒有成功解析出任何題目，請確認格式（題目、選項A-D、正解，以 Tab 或逗號分隔）。';
-      return;
-    }
-    bank = bank.concat(rows);
-    saveBank(bank);
-    renderEditorTable();
-    status.className = 'status-line';
-    status.textContent = '已新增 '+rows.length+' 題到題庫'+(skipped? '（略過 '+skipped+' 列格式不符）':'') + '。';
-  });
-
-  $('#btnImportReplace').addEventListener('click', ()=>{
-    const {rows, skipped} = parseImportText($('#importArea').value);
-    const status = $('#importStatus');
-    if(rows.length === 0){
-      status.className = 'status-line err';
-      status.textContent = '沒有成功解析出任何題目，題庫未被取代。';
-      return;
-    }
-    const ok = window.confirm('這會刪除目前題庫所有題目，改成貼上的 '+rows.length+' 題，確定要繼續嗎？');
-    if(!ok) return;
-    bank = rows;
-    saveBank(bank);
-    renderEditorTable();
-    status.className = 'status-line';
-    status.textContent = '題庫已取代，共 '+rows.length+' 題'+(skipped? '（略過 '+skipped+' 列格式不符）':'') + '。';
-  });
-
-  // ---------- export ----------
-  $('#btnExport').addEventListener('click', ()=>{
-    const tsv = bank.map(q => [q.q, q.options[0], q.options[1], q.options[2], q.options[3], (q.correct+1)].join('\t')).join('\n');
-    const area = $('#exportArea');
-    area.value = tsv;
-    const status = $('#exportStatus');
-    area.focus();
-    area.select();
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(tsv).then(()=>{
-        status.className = 'status-line';
-        status.textContent = '已複製到剪貼簿，可直接貼到 Excel。';
-      }).catch(()=>{
-        status.className = 'status-line';
-        status.textContent = '文字已產生，請在上方文字框內全選複製。';
-      });
-    } else {
-      status.className = 'status-line';
-      status.textContent = '文字已產生，請在上方文字框內全選複製。';
-    }
-  });
-
-  // ---------- init ----------
-  initSetupInputs();
-  showView('setup');
-})();
+renderTabs();
+renderQuizTabs();
+renderPanel();
 </script>
+</body>
+</html>
